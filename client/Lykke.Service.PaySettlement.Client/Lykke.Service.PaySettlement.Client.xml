@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Lykke.Service.PaySettlement.Client</name>
+    </assembly>
+    <members>
+        <member name="M:Lykke.Service.PaySettlement.Client.AutofacExtension.RegisterPaySettlementClient(Autofac.ContainerBuilder,Lykke.Service.PaySettlement.Client.PaySettlementServiceClientSettings,System.Func{Lykke.HttpClientGenerator.HttpClientGeneratorBuilder,Lykke.HttpClientGenerator.HttpClientGeneratorBuilder})">
+            <summary>
+            Registers <see cref="T:Lykke.Service.PaySettlement.Client.IPaySettlementClient"/> in Autofac container using <see cref="T:Lykke.Service.PaySettlement.Client.PaySettlementServiceClientSettings"/>.
+            </summary>
+            <param name="builder">Autofac container builder.</param>
+            <param name="settings">PaySettlement client settings.</param>
+            <param name="builderConfigure">Optional <see cref="T:Lykke.HttpClientGenerator.HttpClientGeneratorBuilder"/> configure handler.</param>
+        </member>
+        <member name="T:Lykke.Service.PaySettlement.Client.IPaySettlementApi">
+            <summary>
+            PaySettlement client API interface.
+            </summary>
+        </member>
+        <member name="T:Lykke.Service.PaySettlement.Client.IPaySettlementClient">
+            <summary>
+            PaySettlement client interface.
+            </summary>
+        </member>
+        <member name="P:Lykke.Service.PaySettlement.Client.IPaySettlementClient.Api">
+            <summary>Application Api interface</summary>
+        </member>
+        <member name="T:Lykke.Service.PaySettlement.Client.PaySettlementClient">
+            <summary>
+            PaySettlement API aggregating interface.
+            </summary>
+        </member>
+        <member name="P:Lykke.Service.PaySettlement.Client.PaySettlementClient.Api">
+            <summary>Inerface to PaySettlement Api.</summary>
+        </member>
+        <member name="M:Lykke.Service.PaySettlement.Client.PaySettlementClient.#ctor(Lykke.HttpClientGenerator.IHttpClientGenerator)">
+            <summary>C-tor</summary>
+        </member>
+        <member name="T:Lykke.Service.PaySettlement.Client.PaySettlementServiceClientSettings">
+            <summary>
+            PaySettlement client settings.
+            </summary>
+        </member>
+        <member name="P:Lykke.Service.PaySettlement.Client.PaySettlementServiceClientSettings.ServiceUrl">
+            <summary>Service url.</summary>
+        </member>
+    </members>
+</doc>

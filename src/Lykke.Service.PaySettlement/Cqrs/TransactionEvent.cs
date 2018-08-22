@@ -1,0 +1,16 @@
+﻿using Lykke.Service.PaySettlement.Core.Domain;
+using ProtoBuf;
+
+namespace Lykke.Service.PaySettlement.Cqrs
+{
+    [ProtoContract]
+    public class TransactionEvent
+    {
+        [ProtoMember(1)]
+        public string TransactionHash { get; set; }
+        [ProtoMember(2)]
+        public string ClientId { get; set; }
+        [ProtoMember(3)]
+        public string Multisig { get; set; }
+    }
+}
