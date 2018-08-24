@@ -60,3 +60,6 @@ node_modules
 **/appsettings.json
 **/appsettings.*.json
 **/*sonar*
+
+#Custom
+client/Lykke.Service.PaySettlement.Client/Lykke.Service.PaySettlement.Client.xml

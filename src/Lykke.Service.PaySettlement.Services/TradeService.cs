@@ -45,12 +45,12 @@ namespace Lykke.Service.PaySettlement.Services
             _timer = new Timer(settings.Interval.TotalMilliseconds);
         }
 
-        public async Task AddToQueueIfTransferred(string transactionId, decimal fee)
+        public async Task AddToQueueIfTransferred(string transactionHash, decimal fee)
         {
             try
             {
                 IEnumerable<IPaymentRequest> paymentRequests =
-                    (await _paymentRequestsRepository.GetByTransferToMarketTransactionId(transactionId)).ToArray();
+                    (await _paymentRequestsRepository.GetByTransferToMarketTransactionHash(transactionHash)).ToArray();
                 if (!paymentRequests.Any())
                 {
                     return;
@@ -59,9 +59,9 @@ namespace Lykke.Service.PaySettlement.Services
                 decimal total = paymentRequests.Sum(r => r.PaidAmount);
                 foreach (IPaymentRequest paymentRequest in paymentRequests)
                 {
-                    paymentRequest.SettlementStatus = SettlementStatus.TransferredToMarket;
-                    paymentRequest.MarketAmount = paymentRequest.PaidAmount * fee / total;
-                    await _paymentRequestsRepository.UpdateAsync(paymentRequest);
+                    decimal marketAmount = paymentRequest.PaidAmount - paymentRequest.PaidAmount * fee / total;
+                    await _paymentRequestsRepository.SetTransferredToMarketAsync(
+                        paymentRequest.Id, marketAmount, fee);
 
                     AssetPair assetPair;
                     try
@@ -78,7 +78,7 @@ namespace Lykke.Service.PaySettlement.Services
                     await _tradeOrdersRepository.InsertOrMergeTradeOrderAsync(new TradeOrder()
                     {
                         PaymentRequestId = paymentRequest.Id,
-                        Volume = paymentRequest.MarketAmount,
+                        Volume = marketAmount,
                         AssetPairId = assetPair.Id,
                         PaymentAssetId = paymentRequest.PaymentAssetId,
                         SettlementAssetId = paymentRequest.SettlementAssetId,
@@ -143,7 +143,8 @@ namespace Lykke.Service.PaySettlement.Services
                     Id = Guid.NewGuid().ToString(),
                     AssetPairId = tradeOrder.AssetPairId,
                     ClientId = _settings.ClientId,
-                    OrderAction = tradeOrder.OrderAction,
+                    OrderAction = OrderAction.Sell,
+                    Straight = tradeOrder.OrderAction == OrderAction.Sell,
                     Volume = (double) tradeOrder.Volume
                 };
 

@@ -69,6 +69,13 @@ namespace Lykke.Service.PaySettlement.Services
                 return;
             }
 
+            if (string.IsNullOrEmpty(merchant.LwId))
+            {
+                _log.Info("Skip payment request because merchant Lykke wallet is not set.",
+                    new { PaymentRequestId = paymentRequest.Id });
+                return;
+            }
+
             paymentRequest.SettlementStatus = SettlementStatus.TransferToMarketQueued;
             paymentRequest.MerchantClientId = merchant.LwId;
             await _paymentRequestsRepository.InsertOrMergeAsync(paymentRequest);
@@ -128,16 +135,19 @@ namespace Lykke.Service.PaySettlement.Services
 
                 BtcTransferResponse response = await _payInternalClient.BtcFreeTransferAsync(transferRequest);
                 _log.Info($"Transfer from Lykke Pay wallets to market multisig wallet {_settings.MultisigWalletAddress}. " +
-                          $"TransactionId: {response.TransactionId}. Payment requests:\r\n" +
+                          $"TransactionHash: {response.Hash}. Payment requests:\r\n" +
                           $"{messages.ToJson()}");
 
                 var tasks = new List<Task>();
                 foreach (TransferToMarketMessage message in messages)
                 {
-                    tasks.Add(_paymentRequestsRepository.SetTransferringToMarketAsync(message.PaymentRequestId, response.TransactionId));
+                    //Fee is zero here.
+                    tasks.Add(_paymentRequestsRepository.SetTransferringToMarketAsync(
+                        message.PaymentRequestId, 
+                        response.Hash));
                     _log.Info($"Payment request is transferring from {message.PaymentRequestWalletAddress} to {_settings.MultisigWalletAddress}.", new
                     {
-                        TransactionId = response.TransactionId,
+                        TransactionHash = response.Hash,
                         PaymentRequestId = message.PaymentRequestId
                     });
                 }

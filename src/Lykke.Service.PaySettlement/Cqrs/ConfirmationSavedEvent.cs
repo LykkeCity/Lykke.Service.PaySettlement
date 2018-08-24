@@ -1,10 +1,9 @@
-﻿using Lykke.Service.PaySettlement.Core.Domain;
-using ProtoBuf;
+﻿using ProtoBuf;
 
 namespace Lykke.Service.PaySettlement.Cqrs
 {
     [ProtoContract]
-    public class TransactionEvent
+    public class ConfirmationSavedEvent
     {
         [ProtoMember(1)]
         public string TransactionHash { get; set; }

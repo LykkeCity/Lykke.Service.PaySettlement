@@ -28,7 +28,7 @@ namespace Lykke.Service.PaySettlement.Cqrs
             _log = logFactory.CreateLog(this);
         }
 
-        public async Task Handle(TransactionEvent transactionEvent)
+        public async Task Handle(ConfirmationSavedEvent transactionEvent)
         {
             if (!string.Equals(transactionEvent.Multisig, _multisigWalletAddress, StringComparison.OrdinalIgnoreCase))
             {
@@ -51,32 +51,18 @@ namespace Lykke.Service.PaySettlement.Cqrs
                         continue;
                     }
 
-                    _log.Info(
-                        $"Multisig to Hot Wallet transaction is caught. Hash is {transactionEvent.TransactionHash}.",
-                        new
-                        {
-                            TransactionId = transaction.TransactionId.ToString()
-                        });
-
-                    var transferToMarketTransaction =
-                        await _ninjaClient.GetTransactionAsync(rec.Outpoint.Hash.ToString());
-
-                    string transferToMarketTransactionId = transferToMarketTransaction.TransactionId.ToString();
-                    decimal fee = transferToMarketTransaction.Fees.ToDecimal(MoneyUnit)
-                                    + transaction.Fees.ToDecimal(MoneyUnit);//todo: check fee calculation
+                    decimal fee = transaction.Fees.ToDecimal(MoneyUnit);
 
                     _log.Info($"Lykke Pay to Multisig transaction is executed. Fee is {fee}.",
-                        new
-                        {
-                            TransactionId = transferToMarketTransaction.TransactionId.ToString()
-                        });
+                        new { TransactionHash = transactionEvent.TransactionHash });
 
-                    await _tradeService.AddToQueueIfTransferred(transferToMarketTransactionId, fee);
+                    await _tradeService.AddToQueueIfTransferred(transactionEvent.TransactionHash, fee);
                 }
             }
             catch (Exception e)
             {
-                _log.Error(e, $"Process transaction is failed. Hash is {transactionEvent.TransactionHash}.");
+                _log.Error(e, $"Process transaction is failed.",
+                    new { TransactionHash = transactionEvent.TransactionHash });
             }
         }
     }

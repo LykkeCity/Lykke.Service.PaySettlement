@@ -32,7 +32,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
 
         public Task DeleteAsync(ITradeOrder tradeOrder)
         {
-            return _storage.DeleteAsync(new TradeOrderEntity(tradeOrder));
+            return _storage.DeleteAsync(TradeOrderEntity.GetPartitionKey(tradeOrder.AssetPairId),
+                TradeOrderEntity.GetRowKey(tradeOrder.PaymentRequestId));
         }
 
         public Task DeleteAsync(IEnumerable<ITradeOrder> tradeOrders)

@@ -66,14 +66,14 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
             return assetPairId;
         }
 
-        internal static string GetRowKey(string id)
+        internal static string GetRowKey(string paymentRequestId)
         {
-            if (string.IsNullOrEmpty(id))
+            if (string.IsNullOrEmpty(paymentRequestId))
             {
-                throw new ArgumentNullException(nameof(id));
+                throw new ArgumentNullException(nameof(paymentRequestId));
             }
 
-            return id;
+            return paymentRequestId;
         }
     }
 }

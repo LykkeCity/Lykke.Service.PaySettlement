@@ -53,11 +53,6 @@ namespace Lykke.Service.PaySettlement.Services
                 throw new InvalidOperationException($"Call {nameof(GetFromServerAsync)} before change balance.");
             }
 
-            if (!_balances.ContainsKey(assetId))
-            {
-                throw new ArgumentOutOfRangeException($"Provided assetId {assetId} is not supported by LykkeExchange.");
-            }
-
             decimal newValue = _balances.AddOrUpdate(assetId, value, (k, v) => v + value);
 
             _log.Info($"Lykkke balance of the {assetId} is updated with {newValue}.");

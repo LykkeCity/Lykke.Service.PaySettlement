@@ -106,6 +106,8 @@ namespace Lykke.Service.PaySettlement.Services
                 string transferId = Guid.NewGuid().ToString();
                 Asset asset = _assetService.GetAsset(message.AssetId);
 
+                double factor = Math.Pow(10, asset.Accuracy);
+                double amount = Math.Floor((double) message.Amount * factor) / factor;
                 var request = new
                 {
                     id = transferId,
@@ -113,7 +115,7 @@ namespace Lykke.Service.PaySettlement.Services
                     toClientId = message.MerchantClientId,
                     assetId = message.AssetId,
                     asset.Accuracy,
-                    amount = (double) message.Amount,
+                    amount = amount,
                     feeModel = (FeeModel) null,
                     overdraft = 0
                 };
@@ -129,10 +131,10 @@ namespace Lykke.Service.PaySettlement.Services
                     return false;
                 }
 
-                _lykkeBalanceService.AddAsset(message.AssetId, message.Amount);
+                _lykkeBalanceService.AddAsset(message.AssetId, (decimal)amount);
                 await _paymentRequestsRepository.SetTransferredToMerchantAsync(message.PaymentRequestId);
 
-                _log.Info($"Settelment is completed. Transferred {message.Amount} {message.AssetId}", 
+                _log.Info($"Settelment is completed. Transferred {amount} {message.AssetId}", 
                     new { message.PaymentRequestId });
 
                 return true;

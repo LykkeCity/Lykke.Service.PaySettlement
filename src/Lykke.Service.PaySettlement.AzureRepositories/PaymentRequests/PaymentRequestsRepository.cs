@@ -10,17 +10,14 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
     public class PaymentRequestsRepository : IPaymentRequestsRepository
     {
         private readonly INoSQLTableStorage<PaymentRequestEntity> _storage;
-        private readonly INoSQLTableStorage<AzureIndex> _indexByWalletAddress;
-        private readonly INoSQLTableStorage<AzureIndex> _indexByTransferToMarketTransactionId;
+        private readonly INoSQLTableStorage<AzureIndex> _indexByTransferToMarketTransactionHash;
 
         public PaymentRequestsRepository(
             INoSQLTableStorage<PaymentRequestEntity> storage,
-            INoSQLTableStorage<AzureIndex> indexByWalletAddress,
-            INoSQLTableStorage<AzureIndex> indexByTransferToMarketTransactionId)
+            INoSQLTableStorage<AzureIndex> indexByTransferToMarketTransactionHash)
         {
             _storage = storage;
-            _indexByWalletAddress = indexByWalletAddress;
-            _indexByTransferToMarketTransactionId = indexByTransferToMarketTransactionId;
+            _indexByTransferToMarketTransactionHash = indexByTransferToMarketTransactionHash;
         }
 
         public async Task<IPaymentRequest> GetAsync(string id)
@@ -29,18 +26,10 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 PaymentRequestEntity.GetRowKey(id));
         }
 
-        public async Task<IPaymentRequest> GetByWalletAddressAsync(string walletAddress)
+        public async Task<IEnumerable<IPaymentRequest>> GetByTransferToMarketTransactionHash(string transactionHash)
         {
-            var index = await _indexByWalletAddress.GetDataAsync(IndexByWalletAddress.GeneratePartitionKey(),
-                IndexByWalletAddress.GenerateRowKey(walletAddress));
-
-            return await _storage.GetDataAsync(index);
-        }
-
-        public async Task<IEnumerable<IPaymentRequest>> GetByTransferToMarketTransactionId(string transactionId)
-        {
-            var index = await _indexByTransferToMarketTransactionId.GetDataAsync(
-                IndexByTransferToMarketTransactionId.GeneratePartitionKey(transactionId));
+            var index = await _indexByTransferToMarketTransactionHash.GetDataAsync(
+                IndexByTransferToMarketTransactionHash.GeneratePartitionKey(transactionHash));
             return await _storage.GetDataAsync(index);
         }
 
@@ -50,34 +39,43 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             var entity = new PaymentRequestEntity(paymentRequest);
             tasks.Add(_storage.InsertOrMergeAsync(entity));
 
-            AzureIndex indexByWalletAddress = IndexByWalletAddress.Create(entity);
-            tasks.Add(_indexByWalletAddress.InsertOrReplaceAsync(indexByWalletAddress));
-
-            if (!string.IsNullOrEmpty(paymentRequest.TransferToMarketTransactionId))
+            if (!string.IsNullOrEmpty(paymentRequest.TransferToMarketTransactionHash))
             {
-                AzureIndex indexByTransferToMarketTransactionId =
-                    IndexByTransferToMarketTransactionId.Create(entity);
-                tasks.Add(_indexByTransferToMarketTransactionId.InsertOrReplaceAsync(
-                    indexByTransferToMarketTransactionId));
+                AzureIndex indexByTransferToMarketTransactionHash =
+                    IndexByTransferToMarketTransactionHash.Create(entity);
+                tasks.Add(_indexByTransferToMarketTransactionHash.InsertOrReplaceAsync(
+                    indexByTransferToMarketTransactionHash));
             }
 
             return Task.WhenAll(tasks);
         }
 
-        public Task SetTransferringToMarketAsync(string id, string transactionId)
+        public Task SetTransferringToMarketAsync(string id, string transactionHash)
         {
-            AzureIndex indexByTransferToMarketTransactionId =
-                IndexByTransferToMarketTransactionId.Create(id, transactionId);
+            AzureIndex indexByTransferToMarketTransactionHash =
+                IndexByTransferToMarketTransactionHash.Create(id, transactionHash);
 
             return Task.WhenAll(
                 _storage.MergeAsync(PaymentRequestEntity.GetPartitionKey(),
                     PaymentRequestEntity.GetRowKey(id), r =>
                     {
-                        r.TransferToMarketTransactionId = transactionId;
+                        r.TransferToMarketTransactionHash = transactionHash;
                         r.SettlementStatus = SettlementStatus.TransferringToMarket;
                         return r;
                     }),
-                _indexByTransferToMarketTransactionId.InsertOrReplaceAsync(indexByTransferToMarketTransactionId));
+                _indexByTransferToMarketTransactionHash.InsertOrReplaceAsync(indexByTransferToMarketTransactionHash));
+        }
+
+        public Task SetTransferredToMarketAsync(string id, decimal marketAmount, decimal transactionFee)
+        {
+            return _storage.MergeAsync(PaymentRequestEntity.GetPartitionKey(),
+                PaymentRequestEntity.GetRowKey(id), r =>
+                {
+                    r.MarketAmount = marketAmount;
+                    r.TransferToMarketTransactionFee = transactionFee;
+                    r.SettlementStatus = SettlementStatus.TransferredToMarket;
+                    return r;
+                });
         }
 
         public Task SetExchangedAsync(string id, decimal marketPrice, string marketOrderId)
@@ -104,7 +102,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         public Task UpdateAsync(IPaymentRequest paymentRequest)
         {
-            return _storage.ReplaceAsync(new PaymentRequestEntity(paymentRequest));
+            return _storage.ReplaceAsync(new PaymentRequestEntity(paymentRequest){ETag = "*"});
         }
     }
 }

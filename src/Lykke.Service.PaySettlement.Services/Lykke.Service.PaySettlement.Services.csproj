@@ -6,9 +6,6 @@
     <Version>1.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Lykke.Service.PayInternal.Client" Version="2.0.21" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Lykke.Service.PaySettlement.Core\Lykke.Service.PaySettlement.Core.csproj" />
   </ItemGroup>
 </Project>

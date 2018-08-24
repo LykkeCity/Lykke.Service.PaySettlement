@@ -40,8 +40,6 @@ namespace Lykke.Service.PaySettlement.Modules
                     .SingleInstance();
             }
 
-            MessagePackSerializerFactory.Defaults.FormatterResolver = MessagePack.Resolvers.ContractlessStandardResolver.Instance;
-
             builder.Register(context => new AutofacDependencyResolver(context)).As<IDependencyResolver>().SingleInstance();
 
             var rabbitMqSettings = new RabbitMQ.Client.ConnectionFactory { Uri = _appSettings.CurrentValue.PaySettlementService.RabbitMqSubscriber.ConnectionString };
@@ -53,11 +51,9 @@ namespace Lykke.Service.PaySettlement.Modules
             builder.Register(ctx =>
             {
                 var logFactory = ctx.Resolve<ILogFactory>();
-#if DEBUG
-                var broker = rabbitMqSettings.Endpoint + "/debug";
-#else
+
                 var broker = rabbitMqSettings.Endpoint.ToString();
-#endif
+
                 var messagingEngine = new MessagingEngine(logFactory,
                     new TransportResolver(new Dictionary<string, TransportInfo>
                     {
@@ -72,16 +68,16 @@ namespace Lykke.Service.PaySettlement.Modules
                     true,
                     Register.DefaultEndpointResolver(new RabbitMqConventionEndpointResolver(
                         "RabbitMq",
-                        SerializationFormat.MessagePack,
-                        environment: "lykke")),
+                        SerializationFormat.ProtoBuf,
+                        environment: "lykke.tx-detector")),
 
                 Register.BoundedContext("paysettlement")
-                    .ListeningEvents(typeof(TransactionEvent))
+                    .ListeningEvents(typeof(ConfirmationSavedEvent))
                     .From("transactions").On("transactions-events")
                     .WithProjection(typeof(TransactionProjection), "transactions")
                 );
             })
-            .As<ICqrsEngine>().SingleInstance();
+            .As<ICqrsEngine>().SingleInstance().AutoActivate();
         }
     }
 }

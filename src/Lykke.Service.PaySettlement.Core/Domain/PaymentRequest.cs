@@ -20,7 +20,8 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         public Decimal PaidAmount { get; set; }
         public DateTime? PaidDate { get; set; }
         public DateTime PaymentRequestTimestamp { get; set; }
-        public string TransferToMarketTransactionId { get; set; }
+        public string TransferToMarketTransactionHash { get; set; }
+        public decimal TransferToMarketTransactionFee { get; set; }
         public SettlementStatus SettlementStatus { get; set; }
         public Decimal MarketAmount { get; set; }
         public decimal MarketPrice { get; set; }

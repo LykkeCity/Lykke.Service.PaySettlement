@@ -23,7 +23,8 @@ namespace Lykke.Service.PaySettlement.Modules
         {
             mce.CreateMap<PaymentRequestDetailsMessage, PaymentRequest>(MemberList.Destination)
                 .ForMember(d => d.PaymentRequestTimestamp, e => e.MapFrom(s => s.Timestamp))
-                .ForMember(d => d.TransferToMarketTransactionId, e => e.Ignore())
+                .ForMember(d => d.TransferToMarketTransactionHash, e => e.Ignore())
+                .ForMember(d => d.TransferToMarketTransactionFee, e => e.Ignore())
                 .ForMember(d => d.MarketAmount, e => e.Ignore())
                 .ForMember(d => d.MarketPrice, e => e.Ignore())
                 .ForMember(d => d.MarketOrderId, e => e.Ignore())

@@ -109,7 +109,17 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             }
         }
 
-        public string TransferToMarketTransactionId { get; set; }
+        public string TransferToMarketTransactionHash { get; set; }
+
+        private decimal _transferToMarketTransactionFee;
+        public decimal TransferToMarketTransactionFee {
+            get =>_transferToMarketTransactionFee;
+            set
+            {
+                _transferToMarketTransactionFee = value;
+                MarkValueTypePropertyAsDirty(nameof(TransferToMarketTransactionFee));
+            }
+        }
 
         private SettlementStatus _settlementStatus;
         public SettlementStatus SettlementStatus
@@ -171,7 +181,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             PaidAmount = paymentRequest.PaidAmount;
             PaidDate = paymentRequest.PaidDate;
             PaymentRequestTimestamp = paymentRequest.PaymentRequestTimestamp;
-            TransferToMarketTransactionId = paymentRequest.TransferToMarketTransactionId;
+            TransferToMarketTransactionHash = paymentRequest.TransferToMarketTransactionHash;
+            TransferToMarketTransactionFee = paymentRequest.TransferToMarketTransactionFee;
             SettlementStatus = paymentRequest.SettlementStatus;
             MarketAmount = paymentRequest.MarketAmount;
             MarketPrice = paymentRequest.MarketPrice;
