@@ -17,9 +17,9 @@ PaySettlementService:
             settings-key: GeneralRabbitMqConnectionString
             types: [ RabbitMq ]
         ExchangeName: 
-            settings-key: PaySettlementService-TickPriceSubscriber-ExchangeName
+            settings-key: PaySettlementService-RabbitMqSubscriber-ExchangeName
         QueueName: 
-            settings-key: PaySettlementService-TickPriceSubscriber-QueueName
+            settings-key: PaySettlementService-RabbitMqSubscriber-QueueName
     TradeService:
         Interval:
             settings-key: PaySettlementService-TradeService-Interval
