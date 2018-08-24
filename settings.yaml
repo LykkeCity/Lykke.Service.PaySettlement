@@ -1,0 +1,77 @@
+PaySettlementService: 
+    Db:
+        LogsConnString:
+            settings-key: PaySettlementService-LogsConnString
+            types: [ AzureTableStorage ]
+        DataConnString: 
+            settings-key: PaySettlementService-DataConnString
+            types: [ AzureTableStorage ]
+        PaymentRequestsTableName: PaymentRequests
+        TradeOrdersTableName: TradeOrders
+        TransferToMarketQueue: TransferToMarket
+        TransferToMerchantQueue: TransferToMerchant
+    ChaosKitty:
+        StateOfChaos: 0.2
+    RabbitMqSubscriber:
+        ConnectionString: 
+            settings-key: GeneralRabbitMqConnectionString
+            types: [ RabbitMq ]
+        ExchangeName: 
+            settings-key: PaySettlementService-TickPriceSubscriber-ExchangeName
+        QueueName: 
+            settings-key: PaySettlementService-TickPriceSubscriber-QueueName
+    TradeService:
+        Interval:
+            settings-key: PaySettlementService-TradeService-Interval
+        ClientId: 
+            settings-key: PaySettlementService-TradeService-ClientId
+    TransferToMarketService:
+        Interval:
+            settings-key: PaySettlementService-TransferToMarketService-Interval
+        MaxTransfersPerTransaction: 
+            settings-key: PaySettlementService-TransferToMarketService-MaxTransfersPerTransaction
+        MultisigWalletAddress:
+            settings-key: PaySettlementService-TransferToMarketService-MultisigWalletAddress
+        PaymentAssetId: 
+            settings-key: PaySettlementService-TransferToMarketService-PaymentAssetId
+        SettlementAssetIds:
+            settings-key: PaySettlementService-TransferToMarketService-SettlementAssetIds
+            types: [ JsonArray ]
+    TransferToMerchantService:
+        Interval:
+            settings-key: PaySettlementService-TransferToMerchantService-Interval
+        ClientId:
+            settings-key: PaySettlementService-TransferToMerchantService-ClientId
+    IsMainNet:
+        settings-key: PaySettlementService-TransferToMerchantService-ClientId
+AssetsServiceClient:  
+    ServiceUrl:
+        settings-key: AssetsServiceUrl
+    ExpirationPeriod:
+        settings-key: AssetsServiceExpirationPeriod
+BalancesServiceClient:
+    ServiceUrl:
+        settings-key: BalancesServiceUrl
+MatchingEngineClient:
+    IpEndpoint: 
+        Port: 
+            settings-key: MatchingEngine-Port
+        Host:
+            settings-key: MatchingEngine-Host
+NinjaServiceClient: 
+    ServiceUrl: 
+        settings-key: NinjaServiceUrl
+PayInternalServiceClient: 
+    ServiceUrl: 
+        settings-key: PayInternalServiceUrl
+MonitoringServiceClient:
+    MonitoringServiceUrl:
+        settings-key: MonitoringServiceUrl
+SlackNotifications:
+    AzureQueue:
+        ConnectionString:
+            settings-key: SlackNotificationsConnString
+            types: [ AzureTableStorage ]
+        QueueName:
+            settings-key: SlackQueueName
+            types: [ AzureTableStorage ]
