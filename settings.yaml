@@ -41,7 +41,7 @@ PaySettlementService:
         Interval:
             settings-key: PaySettlementService-TransferToMerchantService-Interval
         ClientId:
-            settings-key: PaySettlementService-TransferToMerchantService-ClientId
+            settings-key: PaySettlementService-TradeService-ClientId
     IsMainNet:
         settings-key: PaySettlementService-TransferToMerchantService-ClientId
 AssetsServiceClient:  
