@@ -43,7 +43,7 @@ PaySettlementService:
         ClientId:
             settings-key: PaySettlementService-TradeService-ClientId
     IsMainNet:
-        settings-key: PaySettlementService-TransferToMerchantService-ClientId
+        settings-key: PaySettlementService-IsMainNet
 AssetsServiceClient:  
     ServiceUrl:
         settings-key: AssetsServiceUrl
