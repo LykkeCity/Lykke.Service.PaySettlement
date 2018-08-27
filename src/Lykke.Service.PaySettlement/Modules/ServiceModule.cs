@@ -21,6 +21,7 @@ using System.Net;
 using Lykke.Service.PaySettlement.Rabbit;
 using Lykke.Service.Balances.Client;
 using Lykke.Service.PayInternal.Client;
+using Lykke.Service.PayMerchant.Client;
 
 namespace Lykke.Service.PaySettlement.Modules
 {
@@ -51,6 +52,8 @@ namespace Lykke.Service.PaySettlement.Modules
                 .As<IPayInternalClient>()
                 .WithParameter(TypedParameter.From(_appSettings.CurrentValue.PayInternalServiceClient))
                 .SingleInstance();
+
+            builder.RegisterPayMerchantClient(_appSettings.CurrentValue.PayMerchantServiceClient, null);
 
             builder.RegisterType<AssetService>()
                 .As<IAssetService>()

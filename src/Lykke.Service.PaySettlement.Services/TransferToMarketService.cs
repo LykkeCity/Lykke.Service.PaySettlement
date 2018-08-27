@@ -2,8 +2,6 @@
 using Common;
 using Common.Log;
 using Lykke.Common.Log;
-using Lykke.Service.PayInternal.Client;
-using Lykke.Service.PayInternal.Client.Models.PaymentRequest;
 using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Settings;
 using System;
@@ -11,9 +9,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
-using Lykke.Service.PayInternal.Client.Models.Merchant;
+using Lykke.Service.PayInternal.Client;
+using Lykke.Service.PayMerchant.Client;
+using Lykke.Service.PayMerchant.Client.Models;
 using Lykke.Service.PaySettlement.Core.Services;
 using PaymentRequestStatus = Lykke.Service.PayInternal.Contract.PaymentRequest.PaymentRequestStatus;
+using Lykke.Service.PayInternal.Client.Models.PaymentRequest;
 
 namespace Lykke.Service.PaySettlement.Services
 {
@@ -24,14 +25,17 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly ILog _log;
         private readonly Timer _timer;
         private readonly IPayInternalClient _payInternalClient;
+        private readonly IPayMerchantClient _payMerchantClient;
         private readonly IPaymentRequestsRepository _paymentRequestsRepository;
 
-        public TransferToMarketService(ITransferToMarketQueue transferToMarketQueue, 
-            IPayInternalClient payInternalClient, IPaymentRequestsRepository paymentRequestsRepository,
+        public TransferToMarketService(ITransferToMarketQueue transferToMarketQueue,
+            IPayInternalClient payInternalClient, IPayMerchantClient payMerchantClient, 
+            IPaymentRequestsRepository paymentRequestsRepository, 
             TransferToMarketServiceSettings settings, ILogFactory logFactory)
         {
             _transferToMarketQueue = transferToMarketQueue;
             _payInternalClient = payInternalClient;
+            _payMerchantClient = payMerchantClient;
             _paymentRequestsRepository = paymentRequestsRepository;
             _settings = settings;
             _log = logFactory.CreateLog(this);
@@ -61,7 +65,7 @@ namespace Lykke.Service.PaySettlement.Services
                 return;
             }
 
-            MerchantModel merchant = await _payInternalClient.GetMerchantByIdAsync(paymentRequest.MerchantId);
+            MerchantModel merchant = await _payMerchantClient.Api.GetByIdAsync(paymentRequest.MerchantId);
             if (merchant == null)
             {
                 _log.Error(null, $"Merchant {paymentRequest.MerchantId} is not found.",
