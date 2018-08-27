@@ -42,7 +42,10 @@ namespace Lykke.Service.PaySettlement.Modules
 
             builder.Register(context => new AutofacDependencyResolver(context)).As<IDependencyResolver>().SingleInstance();
 
-            var rabbitMqSettings = new RabbitMQ.Client.ConnectionFactory { Uri = _appSettings.CurrentValue.PaySettlementService.RabbitMqSubscriber.ConnectionString };
+            var rabbitMqSettings = new RabbitMQ.Client.ConnectionFactory
+            {
+                Uri = _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber.ConnectionString
+            };
 
             builder.RegisterType<TransactionProjection>()
                 .WithParameter("multisigWalletAddress", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService.MultisigWalletAddress)

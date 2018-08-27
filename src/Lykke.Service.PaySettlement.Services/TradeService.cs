@@ -28,11 +28,13 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly ILykkeBalanceService _lykkeBalanceService;
         private readonly Timer _timer;
         private readonly TradeServiceSettings _settings;
+        private readonly ISettlementStatusPublisher _settlementStatusPublisher;
 
         public TradeService(IMatchingEngineClient matchingEngineClient, 
             IPaymentRequestsRepository paymentRequestsRepository, ITradeOrdersRepository tradeOrdersRepository,
             IAssetService assetPairService, ITransferToMerchantService transferToMerchantService,
-            ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory, TradeServiceSettings settings)
+            ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory, TradeServiceSettings settings,
+            ISettlementStatusPublisher settlementStatusPublisher)
         {
             _matchingEngineClient = matchingEngineClient;
             _paymentRequestsRepository = paymentRequestsRepository;
@@ -42,6 +44,8 @@ namespace Lykke.Service.PaySettlement.Services
             _lykkeBalanceService = lykkeBalanceService;
             _log = logFactory.CreateLog(this);
             _settings = settings;
+            _settlementStatusPublisher = settlementStatusPublisher;
+
             _timer = new Timer(settings.Interval.TotalMilliseconds);
         }
 
@@ -57,43 +61,53 @@ namespace Lykke.Service.PaySettlement.Services
                 }
 
                 decimal total = paymentRequests.Sum(r => r.PaidAmount);
+                var tasks = new List<Task>();
                 foreach (IPaymentRequest paymentRequest in paymentRequests)
                 {
-                    decimal marketAmount = paymentRequest.PaidAmount - paymentRequest.PaidAmount * fee / total;
-                    await _paymentRequestsRepository.SetTransferredToMarketAsync(
-                        paymentRequest.Id, marketAmount, fee);
-
-                    AssetPair assetPair;
-                    try
-                    {
-                        assetPair = _assetPairService.GetAssetPair(paymentRequest.PaymentAssetId,
-                            paymentRequest.SettlementAssetId);
-                    }
-                    catch (ArgumentException ex)
-                    {
-                        _log.Error(ex, "AssetPair is not found.");
-                        continue;
-                    }
-
-                    await _tradeOrdersRepository.InsertOrMergeTradeOrderAsync(new TradeOrder()
-                    {
-                        PaymentRequestId = paymentRequest.Id,
-                        Volume = marketAmount,
-                        AssetPairId = assetPair.Id,
-                        PaymentAssetId = paymentRequest.PaymentAssetId,
-                        SettlementAssetId = paymentRequest.SettlementAssetId,
-                        OrderAction =
-                            string.Equals(assetPair.BaseAssetId, paymentRequest.PaymentAssetId,
-                                StringComparison.OrdinalIgnoreCase)
-                                ? OrderAction.Sell
-                                : OrderAction.Buy
-                    });
+                    tasks.Add(AddToQueueIfTransferred(paymentRequest, total, fee));
                 }
+
+                await Task.WhenAll(tasks);
             }
             catch (Exception ex)
             {
                 _log.Error(ex);
             }
+        }
+
+        public async Task AddToQueueIfTransferred(IPaymentRequest paymentRequest, decimal total, decimal fee)
+        {
+            decimal marketAmount = paymentRequest.PaidAmount - paymentRequest.PaidAmount * fee / total;
+            paymentRequest = await _paymentRequestsRepository.SetTransferredToMarketAsync(
+                paymentRequest.Id, marketAmount, fee);
+
+            AssetPair assetPair;
+            try
+            {
+                assetPair = _assetPairService.GetAssetPair(paymentRequest.PaymentAssetId,
+                    paymentRequest.SettlementAssetId);
+            }
+            catch (ArgumentException ex)
+            {
+                _log.Error(ex, "AssetPair is not found.");
+                return;
+            }
+
+            await _tradeOrdersRepository.InsertOrMergeTradeOrderAsync(new TradeOrder()
+            {
+                PaymentRequestId = paymentRequest.Id,
+                Volume = marketAmount,
+                AssetPairId = assetPair.Id,
+                PaymentAssetId = paymentRequest.PaymentAssetId,
+                SettlementAssetId = paymentRequest.SettlementAssetId,
+                OrderAction =
+                    string.Equals(assetPair.BaseAssetId, paymentRequest.PaymentAssetId,
+                        StringComparison.OrdinalIgnoreCase)
+                        ? OrderAction.Sell
+                        : OrderAction.Buy
+            });
+
+            await _settlementStatusPublisher.PublishAsync(paymentRequest);
         }
 
         public void Start()
@@ -167,9 +181,10 @@ namespace Lykke.Service.PaySettlement.Services
                 _lykkeBalanceService.AddAsset(tradeOrder.PaymentAssetId, tradeOrder.Volume);
                 _lykkeBalanceService.AddAsset(tradeOrder.SettlementAssetId, tradeOrder.Volume * (decimal)response.Price);
                 await _tradeOrdersRepository.DeleteAsync(tradeOrder);
-                await _paymentRequestsRepository.SetExchangedAsync(tradeOrder.PaymentRequestId,
+                IPaymentRequest paymentRequest = await _paymentRequestsRepository.SetExchangedAsync(tradeOrder.PaymentRequestId,
                     (decimal) response.Price, model.Id);
                 await _transferToMerchantService.AddToQueue(tradeOrder.PaymentRequestId);
+                await _settlementStatusPublisher.PublishAsync(paymentRequest);
             }
             catch (Exception ex)
             {

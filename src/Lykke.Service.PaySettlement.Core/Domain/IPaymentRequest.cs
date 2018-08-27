@@ -8,7 +8,7 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         string Id { get; }
         string OrderId { get; }
         string MerchantId { get; }
-        Decimal Amount { get; }
+        decimal Amount { get; }
         string SettlementAssetId { get; }
         string PaymentAssetId { get; }
         DateTime DueDate { get; }
@@ -17,15 +17,16 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         double MarkupFixedFee { get; }
         string WalletAddress { get; }
         PaymentRequestStatus Status { get; }
-        Decimal PaidAmount { get; }
+        decimal PaidAmount { get; }
         DateTime? PaidDate { get; }
         DateTime PaymentRequestTimestamp { get; }
         string TransferToMarketTransactionHash { get; set; }
         decimal TransferToMarketTransactionFee { get; set; }
         SettlementStatus SettlementStatus { get; set; }
-        Decimal MarketAmount { get; set; }
-        decimal MarketPrice { get; set; }
+        decimal MarketAmount { get; set; }
+        decimal MarketPrice { get; set; }        
         string MarketOrderId { get; set; }
+        decimal TransferredAmount { get; set; }
         string MerchantClientId { get; set; }
     }
 }

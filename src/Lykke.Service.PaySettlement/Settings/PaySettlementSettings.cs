@@ -11,7 +11,9 @@ namespace Lykke.Service.PaySettlement.Settings
 
         public ChaosSettings ChaosKitty { get; set; }
 
-        public RabbitMqSubscriberSettings RabbitMqSubscriber { get; set; }
+        public RabbitMqSubscriberSettings PaymentRequestsSubscriber { get; set; }
+
+        public RabbitMqPublisherSettings SettlementStatusPublisher { get; set; }
 
         public TradeServiceSettings TradeService { get; set; }
 

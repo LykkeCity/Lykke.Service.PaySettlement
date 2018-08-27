@@ -24,20 +24,24 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly TransferToMerchantServiceSettings _settings;
         private readonly IAssetService _assetService;
         private readonly ILykkeBalanceService _lykkeBalanceService;
+        private readonly ISettlementStatusPublisher _settlementStatusPublisher;
 
         public TransferToMerchantService(ITransferToMerchantQueue transferToMerchantQueue,
             IPaymentRequestsRepository paymentRequestsRepository,
             IMatchingEngineClient matchingEngineClient, TransferToMerchantServiceSettings settings,
-            IAssetService assetService, ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory)
+            IAssetService assetService, ILykkeBalanceService lykkeBalanceService,
+            ISettlementStatusPublisher settlementStatusPublisher, ILogFactory logFactory)
         {
             _transferToMerchantQueue = transferToMerchantQueue;
             _paymentRequestsRepository = paymentRequestsRepository;
             _log = logFactory.CreateLog(this);
             _matchingEngineClient = matchingEngineClient;
             _settings = settings;
-            _assetService = assetService;
-            _timer = new Timer(settings.Interval.TotalMilliseconds);
+            _assetService = assetService;            
             _lykkeBalanceService = lykkeBalanceService;
+            _settlementStatusPublisher = settlementStatusPublisher;
+
+            _timer = new Timer(settings.Interval.TotalMilliseconds);
         }
 
         public async Task AddToQueue(string paymentRequestId)
@@ -59,6 +63,7 @@ namespace Lykke.Service.PaySettlement.Services
                     Amount = paymentRequest.PaidAmount * paymentRequest.MarketPrice,
                     AssetId = paymentRequest.SettlementAssetId
                 });
+                
             }
             catch (Exception ex)
             {
@@ -132,7 +137,8 @@ namespace Lykke.Service.PaySettlement.Services
                 }
 
                 _lykkeBalanceService.AddAsset(message.AssetId, (decimal)amount);
-                await _paymentRequestsRepository.SetTransferredToMerchantAsync(message.PaymentRequestId);
+                IPaymentRequest paymentRequest = await _paymentRequestsRepository.SetTransferredToMerchantAsync(message.PaymentRequestId, (decimal)amount);
+                await _settlementStatusPublisher.PublishAsync(paymentRequest);
 
                 _log.Info($"Settelment is completed. Transferred {amount} {message.AssetId}", 
                     new { message.PaymentRequestId });

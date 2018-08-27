@@ -156,6 +156,17 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         public string MarketOrderId { get; set; }
 
+        private decimal _transferredAmount;
+        public decimal TransferredAmount
+        {
+            get => _transferredAmount;
+            set
+            {
+                _transferredAmount = value;
+                MarkValueTypePropertyAsDirty(nameof(TransferredAmount));
+            }
+        }
+
         public string MerchantClientId { get; set; }
 
         public PaymentRequestEntity()
@@ -187,6 +198,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             MarketAmount = paymentRequest.MarketAmount;
             MarketPrice = paymentRequest.MarketPrice;
             MarketOrderId = paymentRequest.MarketOrderId;
+            TransferredAmount = paymentRequest.TransferredAmount;
             MerchantClientId = paymentRequest.MerchantClientId;
         }
 

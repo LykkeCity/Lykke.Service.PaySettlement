@@ -30,6 +30,9 @@ namespace Lykke.Service.PaySettlement.Modules
                 .ForMember(d => d.MarketOrderId, e => e.Ignore())
                 .ForMember(d => d.MerchantClientId, e => e.Ignore())
                 .ForMember(d => d.SettlementStatus, e => e.UseValue(SettlementStatus.None));
+
+            mce.CreateMap<IPaymentRequest, SettlementStatusChangedEvent>(MemberList.Destination)
+                .ForMember(d => d.PaymentRequestId, e => e.MapFrom(s => s.Id));
         }
     }
 }

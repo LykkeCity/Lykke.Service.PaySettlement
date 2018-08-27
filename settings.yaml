@@ -12,14 +12,20 @@ PaySettlementService:
         TransferToMerchantQueue: TransferToMerchant
     ChaosKitty:
         StateOfChaos: 0.2
-    RabbitMqSubscriber:
+    PaymentRequestsSubscriber:
         ConnectionString: 
             settings-key: GeneralRabbitMqConnectionString
             types: [ RabbitMq ]
         ExchangeName: 
-            settings-key: PaySettlementService-RabbitMqSubscriber-ExchangeName
+            settings-key: PaySettlementService-PaymentRequestsSubscriber-ExchangeName
         QueueName: 
-            settings-key: PaySettlementService-RabbitMqSubscriber-QueueName
+            settings-key: PaySettlementService-PaymentRequestsSubscriber-QueueName
+    SettlementStatusPublisher:
+        ConnectionString: 
+            settings-key: GeneralRabbitMqConnectionString
+            types: [ RabbitMq ]
+        ExchangeName: 
+            settings-key: PaySettlementService-SettlementStatusPublisher-ExchangeName
     TradeService:
         Interval:
             settings-key: PaySettlementService-TradeService-Interval

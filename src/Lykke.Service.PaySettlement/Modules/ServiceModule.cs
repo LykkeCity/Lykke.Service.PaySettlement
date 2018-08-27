@@ -91,7 +91,15 @@ namespace Lykke.Service.PaySettlement.Modules
                 .As<IStopable>()
                 .AutoActivate()
                 .SingleInstance()
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.RabbitMqSubscriber);
+                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber);
+
+            builder.RegisterType<SettlementStatusPublisher>()
+                .As<ISettlementStatusPublisher>()
+                .As<IStartable>()
+                .As<IStopable>()
+                .AutoActivate()
+                .SingleInstance()
+                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.SettlementStatusPublisher);
 
             builder.RegisterType<LykkeBalanceService>()
                 .As<ILykkeBalanceService>()

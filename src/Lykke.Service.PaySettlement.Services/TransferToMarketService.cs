@@ -15,6 +15,7 @@ using Lykke.Service.PayMerchant.Client.Models;
 using Lykke.Service.PaySettlement.Core.Services;
 using PaymentRequestStatus = Lykke.Service.PayInternal.Contract.PaymentRequest.PaymentRequestStatus;
 using Lykke.Service.PayInternal.Client.Models.PaymentRequest;
+using AutoMapper;
 
 namespace Lykke.Service.PaySettlement.Services
 {
@@ -27,16 +28,19 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly IPayInternalClient _payInternalClient;
         private readonly IPayMerchantClient _payMerchantClient;
         private readonly IPaymentRequestsRepository _paymentRequestsRepository;
+        private readonly ISettlementStatusPublisher _settlementStatusPublisher;
 
         public TransferToMarketService(ITransferToMarketQueue transferToMarketQueue,
             IPayInternalClient payInternalClient, IPayMerchantClient payMerchantClient, 
-            IPaymentRequestsRepository paymentRequestsRepository, 
+            IPaymentRequestsRepository paymentRequestsRepository,
+            ISettlementStatusPublisher settlementStatusPublisher,
             TransferToMarketServiceSettings settings, ILogFactory logFactory)
         {
             _transferToMarketQueue = transferToMarketQueue;
             _payInternalClient = payInternalClient;
             _payMerchantClient = payMerchantClient;
             _paymentRequestsRepository = paymentRequestsRepository;
+            _settlementStatusPublisher = settlementStatusPublisher;
             _settings = settings;
             _log = logFactory.CreateLog(this);
             _timer = new Timer(settings.Interval.TotalMilliseconds);            
@@ -53,7 +57,7 @@ namespace Lykke.Service.PaySettlement.Services
                 StringComparison.OrdinalIgnoreCase))
             {
                 _log.Info($"Skip payment request because payment assetId is {paymentRequest.PaymentAssetId}.",
-                    new { PaymentRequestId = paymentRequest.Id });
+                    new {PaymentRequestId = paymentRequest.Id});
                 return;
             }
 
@@ -61,7 +65,7 @@ namespace Lykke.Service.PaySettlement.Services
                 StringComparer.OrdinalIgnoreCase))
             {
                 _log.Info($"Skip payment request because settlement assetId is {paymentRequest.PaymentAssetId}.",
-                    new { PaymentRequestId = paymentRequest.Id });
+                    new {PaymentRequestId = paymentRequest.Id});
                 return;
             }
 
@@ -69,23 +73,25 @@ namespace Lykke.Service.PaySettlement.Services
             if (merchant == null)
             {
                 _log.Error(null, $"Merchant {paymentRequest.MerchantId} is not found.",
-                    new { PaymentRequestId = paymentRequest.Id });
+                    new {PaymentRequestId = paymentRequest.Id});
                 return;
             }
 
             if (string.IsNullOrEmpty(merchant.LwId))
             {
                 _log.Info("Skip payment request because merchant Lykke wallet is not set.",
-                    new { PaymentRequestId = paymentRequest.Id });
+                    new {PaymentRequestId = paymentRequest.Id});
                 return;
             }
 
             paymentRequest.SettlementStatus = SettlementStatus.TransferToMarketQueued;
             paymentRequest.MerchantClientId = merchant.LwId;
+
             await _paymentRequestsRepository.InsertOrMergeAsync(paymentRequest);
             await _transferToMarketQueue.AddPaymentRequestsAsync(paymentRequest);
+            await _settlementStatusPublisher.PublishAsync(paymentRequest);
 
-            _log.Info("Payment request is queued.", new { PaymentRequestId = paymentRequest.Id });
+            _log.Info("Payment request is queued.", new {PaymentRequestId = paymentRequest.Id});
         }
 
         public void Start()
@@ -147,8 +153,9 @@ namespace Lykke.Service.PaySettlement.Services
                 {
                     //Fee is zero here.
                     tasks.Add(_paymentRequestsRepository.SetTransferringToMarketAsync(
-                        message.PaymentRequestId, 
-                        response.Hash));
+                        message.PaymentRequestId,
+                        response.Hash).ContinueWith(r => _settlementStatusPublisher.PublishAsync(r.Result)));
+
                     _log.Info($"Payment request is transferring from {message.PaymentRequestWalletAddress} to {_settings.MultisigWalletAddress}.", new
                     {
                         TransactionHash = response.Hash,
