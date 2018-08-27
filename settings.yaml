@@ -64,6 +64,10 @@ NinjaServiceClient:
 PayInternalServiceClient: 
     ServiceUrl: 
         settings-key: PayInternalServiceUrl
+PayMerchantServiceClient:
+    ServiceUrl:
+        settings-key: PayMerchantServiceUrl
+        types: [Tag]
 MonitoringServiceClient:
     MonitoringServiceUrl:
         settings-key: MonitoringServiceUrl
