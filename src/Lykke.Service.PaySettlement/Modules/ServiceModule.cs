@@ -62,6 +62,9 @@ namespace Lykke.Service.PaySettlement.Modules
                 .SingleInstance()
                 .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService);
 
+            builder.RegisterType<AccuracyRoundHelper>()
+                .As<IAccuracyRoundHelper>();
+
             builder.RegisterType<TradeService>()
                 .As<ITradeService>()
                 .As<IStartable>()

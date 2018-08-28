@@ -19,29 +19,31 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly ITransferToMerchantQueue _transferToMerchantQueue;
         private readonly IPaymentRequestsRepository _paymentRequestsRepository;
         private readonly IMatchingEngineClient _matchingEngineClient;
-        private readonly ILog _log;
-        private readonly Timer _timer;
+        private readonly ILog _log;        
         private readonly TransferToMerchantServiceSettings _settings;
         private readonly IAssetService _assetService;
         private readonly ILykkeBalanceService _lykkeBalanceService;
+        private readonly IAccuracyRoundHelper _accuracyRoundHelper;
         private readonly ISettlementStatusPublisher _settlementStatusPublisher;
+        private readonly Timer _timer;
 
         public TransferToMerchantService(ITransferToMerchantQueue transferToMerchantQueue,
-            IPaymentRequestsRepository paymentRequestsRepository,
+            IPaymentRequestsRepository paymentRequestsRepository, 
             IMatchingEngineClient matchingEngineClient, TransferToMerchantServiceSettings settings,
-            IAssetService assetService, ILykkeBalanceService lykkeBalanceService,
-            ISettlementStatusPublisher settlementStatusPublisher, ILogFactory logFactory)
+            IAssetService assetService, ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory,
+            IAccuracyRoundHelper accuracyRoundHelper, ISettlementStatusPublisher settlementStatusPublisher)
         {
             _transferToMerchantQueue = transferToMerchantQueue;
             _paymentRequestsRepository = paymentRequestsRepository;
             _log = logFactory.CreateLog(this);
             _matchingEngineClient = matchingEngineClient;
             _settings = settings;
-            _assetService = assetService;            
+            _assetService = assetService;
+            _accuracyRoundHelper = accuracyRoundHelper;
             _lykkeBalanceService = lykkeBalanceService;
             _settlementStatusPublisher = settlementStatusPublisher;
 
-            _timer = new Timer(settings.Interval.TotalMilliseconds);
+            _timer = new Timer(settings.Interval.TotalMilliseconds);            
         }
 
         public async Task AddToQueue(string paymentRequestId)
@@ -111,8 +113,6 @@ namespace Lykke.Service.PaySettlement.Services
                 string transferId = Guid.NewGuid().ToString();
                 Asset asset = _assetService.GetAsset(message.AssetId);
 
-                double factor = Math.Pow(10, asset.Accuracy);
-                double amount = Math.Floor((double) message.Amount * factor) / factor;
                 var request = new
                 {
                     id = transferId,
@@ -120,7 +120,7 @@ namespace Lykke.Service.PaySettlement.Services
                     toClientId = message.MerchantClientId,
                     assetId = message.AssetId,
                     asset.Accuracy,
-                    amount = amount,
+                    amount = _accuracyRoundHelper.Round((double)message.Amount, asset),
                     feeModel = (FeeModel) null,
                     overdraft = 0
                 };
@@ -136,11 +136,11 @@ namespace Lykke.Service.PaySettlement.Services
                     return false;
                 }
 
-                _lykkeBalanceService.AddAsset(message.AssetId, (decimal)amount);
-                IPaymentRequest paymentRequest = await _paymentRequestsRepository.SetTransferredToMerchantAsync(message.PaymentRequestId, (decimal)amount);
+                _lykkeBalanceService.AddAsset(message.AssetId, (decimal)request.amount);
+                IPaymentRequest paymentRequest = await _paymentRequestsRepository.SetTransferredToMerchantAsync(message.PaymentRequestId, (decimal)request.amount);
                 await _settlementStatusPublisher.PublishAsync(paymentRequest);
 
-                _log.Info($"Settelment is completed. Transferred {amount} {message.AssetId}", 
+                _log.Info($"Settelment is completed. Transferred {request.amount} {message.AssetId}", 
                     new { message.PaymentRequestId });
 
                 return true;
