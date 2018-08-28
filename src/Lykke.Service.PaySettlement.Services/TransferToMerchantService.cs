@@ -60,7 +60,7 @@ namespace Lykke.Service.PaySettlement.Services
                 {
                     PaymentRequestId = paymentRequestId,
                     MerchantClientId = paymentRequest.MerchantClientId,
-                    Amount = paymentRequest.PaidAmount * paymentRequest.MarketPrice,
+                    Amount = paymentRequest.MarketAmount * paymentRequest.MarketPrice,
                     AssetId = paymentRequest.SettlementAssetId
                 });
                 
