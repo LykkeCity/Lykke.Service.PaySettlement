@@ -27,7 +27,7 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly ITransferToMerchantService _transferToMerchantService;
         private readonly ILykkeBalanceService _lykkeBalanceService;
         private readonly IAccuracyRoundHelper _accuracyRoundHelper;                
-        private readonly ISettlementStatusPublisher _settlementStatusPublisher;
+        private readonly IStatusService _statusService;
         private readonly TradeServiceSettings _settings;
         private readonly Timer _timer;
 
@@ -35,7 +35,7 @@ namespace Lykke.Service.PaySettlement.Services
             IPaymentRequestsRepository paymentRequestsRepository, ITradeOrdersRepository tradeOrdersRepository,
             IAssetService assetPairService, ITransferToMerchantService transferToMerchantService,
             ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory,
-            IAccuracyRoundHelper accuracyRoundHelper, ISettlementStatusPublisher settlementStatusPublisher,
+            IAccuracyRoundHelper accuracyRoundHelper, IStatusService statusService,
             TradeServiceSettings settings)
         {
             _matchingEngineClient = matchingEngineClient;
@@ -45,7 +45,7 @@ namespace Lykke.Service.PaySettlement.Services
             _transferToMerchantService = transferToMerchantService;
             _lykkeBalanceService = lykkeBalanceService;                        
             _accuracyRoundHelper = accuracyRoundHelper;
-            _settlementStatusPublisher = settlementStatusPublisher;
+            _statusService = statusService;
             _settings = settings;
 
             _log = logFactory.CreateLog(this);
@@ -86,8 +86,7 @@ namespace Lykke.Service.PaySettlement.Services
                 marketAmount = (decimal) _accuracyRoundHelper.Round((double) marketAmount,
                     paymentRequest.PaymentAssetId);
 
-                await _paymentRequestsRepository.SetTransferredToMarketAsync(
-                    paymentRequest.Id, marketAmount, fee);
+                await _statusService.SetTransferredToMarketAsync(paymentRequest.Id, marketAmount, fee);
 
                 AssetPair assetPair = _assetPairService.GetAssetPair(paymentRequest.PaymentAssetId,
                     paymentRequest.SettlementAssetId);
@@ -105,13 +104,12 @@ namespace Lykke.Service.PaySettlement.Services
                             ? OrderAction.Sell
                             : OrderAction.Buy
                 });
-
-                await _settlementStatusPublisher.PublishAsync(paymentRequest);
             }
             catch (ArgumentException ex)
             {
                 _log.Error(ex, "Payment request can not be settled.",
                     new {PaymentRequestId = paymentRequest.Id});
+                await _statusService.SetErrorAsync(paymentRequest.Id, $"Can not add to trade queue: {ex}.");
             }
         }
 
@@ -186,14 +184,13 @@ namespace Lykke.Service.PaySettlement.Services
                 _lykkeBalanceService.AddAsset(tradeOrder.PaymentAssetId, tradeOrder.Volume);
                 _lykkeBalanceService.AddAsset(tradeOrder.SettlementAssetId, tradeOrder.Volume * (decimal)response.Price);
                 await _tradeOrdersRepository.DeleteAsync(tradeOrder);
-                IPaymentRequest paymentRequest = await _paymentRequestsRepository.SetExchangedAsync(tradeOrder.PaymentRequestId,
+                await _statusService.SetExchangedAsync(tradeOrder.PaymentRequestId,
                     (decimal) response.Price, model.Id);
                 await _transferToMerchantService.AddToQueue(tradeOrder.PaymentRequestId);
-                await _settlementStatusPublisher.PublishAsync(paymentRequest);
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.Error(ex,"Can not exchange.", new { tradeOrder.PaymentRequestId });
             }
         }        
 

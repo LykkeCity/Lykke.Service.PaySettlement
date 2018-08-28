@@ -65,6 +65,10 @@ namespace Lykke.Service.PaySettlement.Modules
             builder.RegisterType<AccuracyRoundHelper>()
                 .As<IAccuracyRoundHelper>();
 
+            builder.RegisterType<StatusService>()
+                .As<IStatusService>()
+                .SingleInstance();
+
             builder.RegisterType<TradeService>()
                 .As<ITradeService>()
                 .As<IStartable>()

@@ -50,6 +50,16 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             return Task.WhenAll(tasks);
         }
 
+        public async Task<IPaymentRequest> SetTransferToMarketQueuedAsync(string id)
+        {
+            return await _storage.MergeAsync(PaymentRequestEntity.GetPartitionKey(),
+                PaymentRequestEntity.GetRowKey(id), r =>
+                {
+                    r.SettlementStatus = SettlementStatus.TransferToMarketQueued;
+                    return r;
+                });
+        }
+
         public async Task<IPaymentRequest> SetTransferringToMarketAsync(string id, string transactionHash)
         {
             AzureIndex indexByTransferToMarketTransactionHash =
@@ -100,6 +110,17 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 {
                     r.SettlementStatus = SettlementStatus.TransferredToMerchant;
                     r.TransferredAmount = transferredAmount;
+                    return r;
+                });
+        }
+
+        public async Task<IPaymentRequest> SetErrorAsync(string id, string errorDescription = null)
+        {
+            return await _storage.MergeAsync(PaymentRequestEntity.GetPartitionKey(),
+                PaymentRequestEntity.GetRowKey(id), r =>
+                {
+                    r.Error = true;
+                    r.ErrorDescription = errorDescription;
                     return r;
                 });
         }

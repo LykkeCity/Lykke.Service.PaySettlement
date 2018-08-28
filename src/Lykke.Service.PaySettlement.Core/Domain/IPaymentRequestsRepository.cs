@@ -8,10 +8,12 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         Task<IPaymentRequest> GetAsync(string id);
         Task<IEnumerable<IPaymentRequest>> GetByTransferToMarketTransactionHash(string transactionHash);
         Task InsertOrMergeAsync(IPaymentRequest paymentRequestEntity);
+        Task<IPaymentRequest> SetTransferToMarketQueuedAsync(string id);
         Task<IPaymentRequest> SetTransferringToMarketAsync(string id, string transactionHash);
         Task<IPaymentRequest> SetTransferredToMarketAsync(string id, decimal marketAmount, decimal transactionFee);
         Task<IPaymentRequest> SetExchangedAsync(string id, decimal marketPrice, string marketOrderId);
         Task<IPaymentRequest> SetTransferredToMerchantAsync(string id, decimal transferredAmount);
+        Task<IPaymentRequest> SetErrorAsync(string id, string errorDescription = null);
         Task UpdateAsync(IPaymentRequest paymentRequest);
     }
 }

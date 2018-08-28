@@ -28,5 +28,7 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         string MarketOrderId { get; set; }
         decimal TransferredAmount { get; set; }
         string MerchantClientId { get; set; }
+        bool Error { get; set; }
+        string ErrorDescription { get; set; }
     }
 }

@@ -24,14 +24,14 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly IAssetService _assetService;
         private readonly ILykkeBalanceService _lykkeBalanceService;
         private readonly IAccuracyRoundHelper _accuracyRoundHelper;
-        private readonly ISettlementStatusPublisher _settlementStatusPublisher;
+        private readonly IStatusService _statusService;
         private readonly Timer _timer;
 
         public TransferToMerchantService(ITransferToMerchantQueue transferToMerchantQueue,
             IPaymentRequestsRepository paymentRequestsRepository, 
             IMatchingEngineClient matchingEngineClient, TransferToMerchantServiceSettings settings,
             IAssetService assetService, ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory,
-            IAccuracyRoundHelper accuracyRoundHelper, ISettlementStatusPublisher settlementStatusPublisher)
+            IAccuracyRoundHelper accuracyRoundHelper, IStatusService statusService)
         {
             _transferToMerchantQueue = transferToMerchantQueue;
             _paymentRequestsRepository = paymentRequestsRepository;
@@ -41,7 +41,7 @@ namespace Lykke.Service.PaySettlement.Services
             _assetService = assetService;
             _accuracyRoundHelper = accuracyRoundHelper;
             _lykkeBalanceService = lykkeBalanceService;
-            _settlementStatusPublisher = settlementStatusPublisher;
+            _statusService = statusService;
 
             _timer = new Timer(settings.Interval.TotalMilliseconds);            
         }
@@ -137,11 +137,8 @@ namespace Lykke.Service.PaySettlement.Services
                 }
 
                 _lykkeBalanceService.AddAsset(message.AssetId, (decimal)request.amount);
-                IPaymentRequest paymentRequest = await _paymentRequestsRepository.SetTransferredToMerchantAsync(message.PaymentRequestId, (decimal)request.amount);
-                await _settlementStatusPublisher.PublishAsync(paymentRequest);
-
-                _log.Info($"Settelment is completed. Transferred {request.amount} {message.AssetId}", 
-                    new { message.PaymentRequestId });
+                await _statusService.SetTransferredToMerchantAsync(message.PaymentRequestId, 
+                    (decimal) request.amount);
 
                 return true;
             }

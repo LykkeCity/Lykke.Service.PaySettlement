@@ -169,6 +169,18 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         public string MerchantClientId { get; set; }
 
+        private bool _error;
+        public bool Error
+        {
+            get => _error;
+            set
+            {
+                _error = value;
+                MarkValueTypePropertyAsDirty(nameof(Error));
+            }
+        }
+        public string ErrorDescription { get; set; }
+
         public PaymentRequestEntity()
         {
         }
@@ -200,6 +212,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             MarketOrderId = paymentRequest.MarketOrderId;
             TransferredAmount = paymentRequest.TransferredAmount;
             MerchantClientId = paymentRequest.MerchantClientId;
+            Error = paymentRequest.Error;
+            ErrorDescription = paymentRequest.ErrorDescription;
         }
 
         internal static string GetPartitionKey()

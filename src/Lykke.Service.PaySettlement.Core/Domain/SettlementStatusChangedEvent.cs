@@ -11,5 +11,7 @@
         public string MarketOrderId { get; set; }
         public decimal TransferredAmount { get; set; }
         public string MerchantClientId { get; set; }
+        public bool Error { get; set; }
+        public string ErrorDescription { get; set; }
     }
 }

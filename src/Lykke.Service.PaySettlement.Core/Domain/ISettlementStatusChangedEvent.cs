@@ -11,5 +11,7 @@
         string MarketOrderId { get; }
         decimal TransferredAmount { get; }
         string MerchantClientId { get; }
+        bool Error { get; }
+        string ErrorDescription { get; }
     }
 }

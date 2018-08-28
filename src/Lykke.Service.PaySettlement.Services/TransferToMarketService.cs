@@ -2,45 +2,43 @@
 using Common;
 using Common.Log;
 using Lykke.Common.Log;
+using Lykke.Service.PayInternal.Client;
+using Lykke.Service.PayInternal.Client.Models.PaymentRequest;
+using Lykke.Service.PayMerchant.Client;
+using Lykke.Service.PayMerchant.Client.Models;
 using Lykke.Service.PaySettlement.Core.Domain;
+using Lykke.Service.PaySettlement.Core.Services;
 using Lykke.Service.PaySettlement.Core.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Timers;
-using Lykke.Service.PayInternal.Client;
-using Lykke.Service.PayMerchant.Client;
-using Lykke.Service.PayMerchant.Client.Models;
-using Lykke.Service.PaySettlement.Core.Services;
 using PaymentRequestStatus = Lykke.Service.PayInternal.Contract.PaymentRequest.PaymentRequestStatus;
-using Lykke.Service.PayInternal.Client.Models.PaymentRequest;
-using AutoMapper;
 
 namespace Lykke.Service.PaySettlement.Services
 {
     public class TransferToMarketService : IStartable, IStopable, ITransferToMarketService
     {
-        private readonly ITransferToMarketQueue _transferToMarketQueue;
-        private readonly TransferToMarketServiceSettings _settings;
-        private readonly ILog _log;
-        private readonly Timer _timer;
+        private readonly ITransferToMarketQueue _transferToMarketQueue;        
         private readonly IPayInternalClient _payInternalClient;
         private readonly IPayMerchantClient _payMerchantClient;
         private readonly IPaymentRequestsRepository _paymentRequestsRepository;
-        private readonly ISettlementStatusPublisher _settlementStatusPublisher;
+        private readonly IStatusService _statusService;
+        private readonly TransferToMarketServiceSettings _settings;
+        private readonly ILog _log;
+        private readonly Timer _timer;
 
         public TransferToMarketService(ITransferToMarketQueue transferToMarketQueue,
             IPayInternalClient payInternalClient, IPayMerchantClient payMerchantClient, 
-            IPaymentRequestsRepository paymentRequestsRepository,
-            ISettlementStatusPublisher settlementStatusPublisher,
+            IPaymentRequestsRepository paymentRequestsRepository, IStatusService statusService,
             TransferToMarketServiceSettings settings, ILogFactory logFactory)
         {
             _transferToMarketQueue = transferToMarketQueue;
             _payInternalClient = payInternalClient;
             _payMerchantClient = payMerchantClient;
             _paymentRequestsRepository = paymentRequestsRepository;
-            _settlementStatusPublisher = settlementStatusPublisher;
+            _statusService = statusService;
             _settings = settings;
             _log = logFactory.CreateLog(this);
             _timer = new Timer(settings.Interval.TotalMilliseconds);            
@@ -88,9 +86,8 @@ namespace Lykke.Service.PaySettlement.Services
             paymentRequest.MerchantClientId = merchant.LwId;
 
             await _paymentRequestsRepository.InsertOrMergeAsync(paymentRequest);
+            await _statusService.SetTransferToMarketQueuedAsync(paymentRequest.Id);
             await _transferToMarketQueue.AddPaymentRequestsAsync(paymentRequest);
-            await _settlementStatusPublisher.PublishAsync(paymentRequest);
-
             _log.Info("Payment request is queued.", new {PaymentRequestId = paymentRequest.Id});
         }
 
@@ -152,15 +149,8 @@ namespace Lykke.Service.PaySettlement.Services
                 foreach (TransferToMarketMessage message in messages)
                 {
                     //Fee is zero here.
-                    tasks.Add(_paymentRequestsRepository.SetTransferringToMarketAsync(
-                        message.PaymentRequestId,
-                        response.Hash).ContinueWith(r => _settlementStatusPublisher.PublishAsync(r.Result)));
-
-                    _log.Info($"Payment request is transferring from {message.PaymentRequestWalletAddress} to {_settings.MultisigWalletAddress}.", new
-                    {
-                        TransactionHash = response.Hash,
-                        PaymentRequestId = message.PaymentRequestId
-                    });
+                    tasks.Add(_statusService.SetTransferringToMarketAsync(message.PaymentRequestId, 
+                        response.Hash));
                 }
 
                 await Task.WhenAll(tasks);
