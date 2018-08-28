@@ -3,6 +3,8 @@
     public interface ISettlementStatusChangedEvent
     {
         string PaymentRequestId { get; }
+        string MerchantId { get; }
+        string WalletAddress { get; }
         SettlementStatus SettlementStatus { get; }
         string TransferToMarketTransactionHash { get; }
         decimal TransferToMarketTransactionFee { get; }
