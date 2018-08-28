@@ -18,5 +18,6 @@ namespace Lykke.Service.PaySettlement.Settings
         public MatchingEngineSettings MatchingEngineClient { get; set; }
         public NinjaServiceClientSettings NinjaServiceClient { get; set; }
         public BalancesServiceClientSettings BalancesServiceClient { get; set; }
+        public ExchangeOperationsServiceClientSettings ExchangeOperationsServiceClient { get; set; }
     }
 }

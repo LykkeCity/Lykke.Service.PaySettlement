@@ -2,9 +2,10 @@
 using Common;
 using Common.Log;
 using Lykke.Common.Log;
-using Lykke.MatchingEngine.Connector.Abstractions.Services;
 using Lykke.MatchingEngine.Connector.Models.Api;
 using Lykke.Service.Assets.Client.Models;
+using Lykke.Service.ExchangeOperations.Client;
+using Lykke.Service.ExchangeOperations.Client.AutorestClient.Models;
 using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
 using Lykke.Service.PaySettlement.Core.Settings;
@@ -18,30 +19,31 @@ namespace Lykke.Service.PaySettlement.Services
     {
         private readonly ITransferToMerchantQueue _transferToMerchantQueue;
         private readonly IPaymentRequestsRepository _paymentRequestsRepository;
-        private readonly IMatchingEngineClient _matchingEngineClient;
         private readonly ILog _log;        
         private readonly TransferToMerchantServiceSettings _settings;
         private readonly IAssetService _assetService;
         private readonly ILykkeBalanceService _lykkeBalanceService;
         private readonly IAccuracyRoundHelper _accuracyRoundHelper;
         private readonly IStatusService _statusService;
+        private readonly IExchangeOperationsServiceClient _exchangeOperationsServiceClient;
         private readonly Timer _timer;
 
         public TransferToMerchantService(ITransferToMerchantQueue transferToMerchantQueue,
             IPaymentRequestsRepository paymentRequestsRepository, 
-            IMatchingEngineClient matchingEngineClient, TransferToMerchantServiceSettings settings,
-            IAssetService assetService, ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory,
-            IAccuracyRoundHelper accuracyRoundHelper, IStatusService statusService)
+            TransferToMerchantServiceSettings settings, IAssetService assetService, 
+            ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory,
+            IAccuracyRoundHelper accuracyRoundHelper, IStatusService statusService,
+            IExchangeOperationsServiceClient exchangeOperationsServiceClient)
         {
             _transferToMerchantQueue = transferToMerchantQueue;
             _paymentRequestsRepository = paymentRequestsRepository;
             _log = logFactory.CreateLog(this);
-            _matchingEngineClient = matchingEngineClient;
             _settings = settings;
             _assetService = assetService;
             _accuracyRoundHelper = accuracyRoundHelper;
             _lykkeBalanceService = lykkeBalanceService;
             _statusService = statusService;
+            _exchangeOperationsServiceClient = exchangeOperationsServiceClient;
 
             _timer = new Timer(settings.Interval.TotalMilliseconds);            
         }
@@ -110,33 +112,27 @@ namespace Lykke.Service.PaySettlement.Services
                     return false;
                 }
 
-                string transferId = Guid.NewGuid().ToString();
                 Asset asset = _assetService.GetAsset(message.AssetId);
 
                 var request = new
                 {
-                    id = transferId,
-                    fromClientId = _settings.ClientId,
-                    toClientId = message.MerchantClientId,
-                    assetId = message.AssetId,
-                    asset.Accuracy,
+                    destClientId = _settings.ClientId,
+                    sourceClientId = message.MerchantClientId,
                     amount = _accuracyRoundHelper.Round((double)message.Amount, asset),
-                    feeModel = (FeeModel) null,
-                    overdraft = 0
+                    assetId = message.AssetId
                 };
 
-                MeResponseModel response = await _matchingEngineClient.TransferAsync(request.id,
-                    request.fromClientId, request.toClientId, request.assetId,
-                    request.Accuracy, request.amount, request.feeModel, request.overdraft);
+                ExchangeOperationResult result = await _exchangeOperationsServiceClient.TransferAsync(
+                    request.destClientId, request.sourceClientId, request.amount, request.assetId);
 
-                if (response.Status != MeStatusCodes.Ok)
+                if (result.Code != (int)MeStatusCodes.Ok)
                 {
                     _log.Error(null, $"Can not transfer to merchant:\r\n{request.ToJson()}\r\n" +
-                                     $"Response: {response.ToJson()}", new {message.PaymentRequestId});
+                                     $"Response: {result.ToJson()}", new {message.PaymentRequestId});
                     return false;
                 }
 
-                _lykkeBalanceService.AddAsset(message.AssetId, (decimal)request.amount);
+                _lykkeBalanceService.AddAsset(message.AssetId, -(decimal)request.amount);
                 await _statusService.SetTransferredToMerchantAsync(message.PaymentRequestId, 
                     (decimal) request.amount);
 

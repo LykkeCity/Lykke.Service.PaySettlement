@@ -74,6 +74,9 @@ PayMerchantServiceClient:
     ServiceUrl:
         settings-key: PayMerchantServiceUrl
         types: [Tag]
+ExchangeOperationsServiceClient:
+    ServiceUrl:
+        settings-key: ExchangeOperationsServiceUrl    
 MonitoringServiceClient:
     MonitoringServiceUrl:
         settings-key: MonitoringServiceUrl

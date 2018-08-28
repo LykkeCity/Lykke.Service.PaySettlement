@@ -181,7 +181,7 @@ namespace Lykke.Service.PaySettlement.Services
                           $"Response: {response.ToJson()}",
                     new { tradeOrder.PaymentRequestId });
 
-                _lykkeBalanceService.AddAsset(tradeOrder.PaymentAssetId, tradeOrder.Volume);
+                _lykkeBalanceService.AddAsset(tradeOrder.PaymentAssetId, -tradeOrder.Volume);
                 _lykkeBalanceService.AddAsset(tradeOrder.SettlementAssetId, tradeOrder.Volume * (decimal)response.Price);
                 await _tradeOrdersRepository.DeleteAsync(tradeOrder);
                 await _statusService.SetExchangedAsync(tradeOrder.PaymentRequestId,

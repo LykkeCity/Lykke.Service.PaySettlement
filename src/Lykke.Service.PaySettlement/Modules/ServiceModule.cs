@@ -20,6 +20,7 @@ using QBitNinja.Client;
 using System.Net;
 using Lykke.Service.PaySettlement.Rabbit;
 using Lykke.Service.Balances.Client;
+using Lykke.Service.ExchangeOperations.Client;
 using Lykke.Service.PayInternal.Client;
 using Lykke.Service.PayMerchant.Client;
 
@@ -47,6 +48,9 @@ namespace Lykke.Service.PaySettlement.Modules
                 _appSettings.CurrentValue.AssetsServiceClient.ExpirationPeriod));
             RegisterNinja(builder);
             RegisterRepositories(builder);
+
+            builder.RegisterInstance<IExchangeOperationsServiceClient>(new ExchangeOperationsServiceClient(
+                _appSettings.CurrentValue.ExchangeOperationsServiceClient.ServiceUrl));
 
             builder.RegisterType<PayInternalClient>()
                 .As<IPayInternalClient>()
