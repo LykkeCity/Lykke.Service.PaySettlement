@@ -28,6 +28,7 @@ namespace Lykke.Service.PaySettlement.Modules
                 .ForMember(d => d.MarketAmount, e => e.Ignore())
                 .ForMember(d => d.MarketPrice, e => e.Ignore())
                 .ForMember(d => d.MarketOrderId, e => e.Ignore())
+                .ForMember(d => d.TransferredAmount, e => e.Ignore())
                 .ForMember(d => d.MerchantClientId, e => e.Ignore())
                 .ForMember(d => d.SettlementStatus, e => e.UseValue(SettlementStatus.None));
 
