@@ -3,6 +3,8 @@
     public class SettlementStatusChangedEvent : ISettlementStatusChangedEvent
     {
         public string PaymentRequestId { get; set; }
+        public string MerchantId { get; set; }
+        public string WalletAddress { get; set; }
         public SettlementStatus SettlementStatus { get; set; }
         public string TransferToMarketTransactionHash { get; set; }
         public decimal TransferToMarketTransactionFee { get; set; }
