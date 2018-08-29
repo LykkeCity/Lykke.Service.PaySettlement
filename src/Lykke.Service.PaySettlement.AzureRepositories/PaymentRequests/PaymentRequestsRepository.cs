@@ -11,13 +11,16 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
     {
         private readonly INoSQLTableStorage<PaymentRequestEntity> _storage;
         private readonly INoSQLTableStorage<AzureIndex> _indexByTransferToMarketTransactionHash;
+        private readonly INoSQLTableStorage<AzureIndex> _indexByError;
 
         public PaymentRequestsRepository(
             INoSQLTableStorage<PaymentRequestEntity> storage,
-            INoSQLTableStorage<AzureIndex> indexByTransferToMarketTransactionHash)
+            INoSQLTableStorage<AzureIndex> indexByTransferToMarketTransactionHash,
+            INoSQLTableStorage<AzureIndex> indexByError)
         {
             _storage = storage;
             _indexByTransferToMarketTransactionHash = indexByTransferToMarketTransactionHash;
+            _indexByError = indexByError;
         }
 
         public async Task<IPaymentRequest> GetAsync(string id)
@@ -116,13 +119,20 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         public async Task<IPaymentRequest> SetErrorAsync(string id, string errorDescription = null)
         {
-            return await _storage.MergeAsync(PaymentRequestEntity.GetPartitionKey(),
+            AzureIndex indexByError = IndexByError.Create(id);
+
+            var mergeTask = _storage.MergeAsync(PaymentRequestEntity.GetPartitionKey(),
                 PaymentRequestEntity.GetRowKey(id), r =>
                 {
                     r.Error = true;
                     r.ErrorDescription = errorDescription;
                     return r;
                 });
+
+            await Task.WhenAll(mergeTask,
+                _indexByError.InsertOrReplaceAsync(indexByError));
+
+            return mergeTask.Result;
         }
 
         public Task UpdateAsync(IPaymentRequest paymentRequest)
