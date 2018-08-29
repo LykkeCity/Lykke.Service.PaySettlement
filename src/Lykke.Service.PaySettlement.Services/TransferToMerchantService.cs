@@ -116,8 +116,8 @@ namespace Lykke.Service.PaySettlement.Services
 
                 var request = new
                 {
-                    destClientId = _settings.ClientId,
-                    sourceClientId = message.MerchantClientId,
+                    destClientId = message.MerchantClientId,
+                    sourceClientId = _settings.ClientId,
                     amount = _accuracyRoundHelper.Round((double)message.Amount, asset),
                     assetId = message.AssetId
                 };
