@@ -21,15 +21,5 @@ namespace Lykke.Service.PaySettlement.Services
         {            
             return _client.GetTransaction(uint256.Parse(hash));
         }
-
-        public Task<GetBlockResponse> GetBlockAsync(int blockHeight)
-        {
-            return _client.GetBlock(new BlockFeature(blockHeight));
-        }
-
-        public async Task<int> GetCurrentBlockNumberAsync()
-        {
-            return (await _client.GetBlock(new BlockFeature(SpecialFeature.Last), true)).AdditionalInformation.Height;
-        }
     }
 }

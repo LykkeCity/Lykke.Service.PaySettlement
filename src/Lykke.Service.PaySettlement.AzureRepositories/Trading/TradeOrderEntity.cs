@@ -10,6 +10,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
     [ValueTypeMergingStrategy(ValueTypeMergingStrategy.UpdateIfDirty)]
     public class TradeOrderEntity : AzureTableEntity, ITradeOrder
     {
+        public string MerchantId { get; set; }
+
         public string PaymentRequestId { get; set; }
 
         public string AssetPairId { get; set; }
@@ -48,6 +50,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
         {
             PartitionKey = GetPartitionKey(tradeOrder.AssetPairId);
             RowKey = GetRowKey(tradeOrder.PaymentRequestId);
+            MerchantId = tradeOrder.MerchantId;
             PaymentRequestId = tradeOrder.PaymentRequestId;
             AssetPairId = tradeOrder.AssetPairId;
             PaymentAssetId = tradeOrder.PaymentAssetId;

@@ -7,8 +7,6 @@ namespace Lykke.Service.PaySettlement.Core.Domain
     {
         Task AddPaymentRequestsAsync(IPaymentRequest paymentRequest);
 
-        Task<bool> ProcessTransferAsync(Func<TransferToMarketMessage, Task<bool>> processor);
-
         Task<int> ProcessTransferAsync(Func<TransferToMarketMessage[], Task<bool>> processor,
             int maxCount = int.MaxValue);
     }

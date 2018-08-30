@@ -25,20 +25,10 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
             return await _storage.GetDataAsync();
         }
 
-        public async Task<IEnumerable<ITradeOrder>> GetAsync(string assetPair)
-        {
-            return await _storage.GetDataAsync(TradeOrderEntity.GetPartitionKey(assetPair));
-        }
-
         public Task DeleteAsync(ITradeOrder tradeOrder)
         {
             return _storage.DeleteAsync(TradeOrderEntity.GetPartitionKey(tradeOrder.AssetPairId),
                 TradeOrderEntity.GetRowKey(tradeOrder.PaymentRequestId));
-        }
-
-        public Task DeleteAsync(IEnumerable<ITradeOrder> tradeOrders)
-        {
-            return _storage.DeleteAsync(tradeOrders.Select(o=> new TradeOrderEntity(o)));
         }
     }
 }

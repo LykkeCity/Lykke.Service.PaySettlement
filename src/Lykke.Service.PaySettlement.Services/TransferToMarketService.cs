@@ -86,9 +86,9 @@ namespace Lykke.Service.PaySettlement.Services
             paymentRequest.MerchantClientId = merchant.LwId;
 
             await _paymentRequestsRepository.InsertOrMergeAsync(paymentRequest);
-            await _statusService.SetTransferToMarketQueuedAsync(paymentRequest.Id);
-            await _transferToMarketQueue.AddPaymentRequestsAsync(paymentRequest);
-            _log.Info("Payment request is queued.", new {PaymentRequestId = paymentRequest.Id});
+
+            await _statusService.SetTransferToMarketQueuedAsync(paymentRequest.MerchantId, 
+                paymentRequest.Id);
         }
 
         public void Start()
@@ -149,8 +149,8 @@ namespace Lykke.Service.PaySettlement.Services
                 foreach (TransferToMarketMessage message in messages)
                 {
                     //Fee is zero here.
-                    tasks.Add(_statusService.SetTransferringToMarketAsync(message.PaymentRequestId, 
-                        response.Hash));
+                    tasks.Add(_statusService.SetTransferringToMarketAsync(message.MerchantId,
+                        message.PaymentRequestId, response.Hash));
                 }
 
                 await Task.WhenAll(tasks);

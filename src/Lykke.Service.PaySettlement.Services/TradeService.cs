@@ -24,27 +24,22 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly IPaymentRequestsRepository _paymentRequestsRepository;
         private readonly ITradeOrdersRepository _tradeOrdersRepository;
         private readonly IAssetService _assetPairService;
-        private readonly ITransferToMerchantService _transferToMerchantService;
-        private readonly ILykkeBalanceService _lykkeBalanceService;
-        private readonly IAccuracyRoundHelper _accuracyRoundHelper;                
+        private readonly ILykkeBalanceService _lykkeBalanceService;             
         private readonly IStatusService _statusService;
         private readonly TradeServiceSettings _settings;
         private readonly Timer _timer;
 
         public TradeService(IMatchingEngineClient matchingEngineClient, 
-            IPaymentRequestsRepository paymentRequestsRepository, ITradeOrdersRepository tradeOrdersRepository,
-            IAssetService assetPairService, ITransferToMerchantService transferToMerchantService,
+            IPaymentRequestsRepository paymentRequestsRepository, 
+            ITradeOrdersRepository tradeOrdersRepository, IAssetService assetPairService, 
             ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory,
-            IAccuracyRoundHelper accuracyRoundHelper, IStatusService statusService,
-            TradeServiceSettings settings)
+            IStatusService statusService, TradeServiceSettings settings)
         {
             _matchingEngineClient = matchingEngineClient;
             _paymentRequestsRepository = paymentRequestsRepository;
             _tradeOrdersRepository = tradeOrdersRepository;
             _assetPairService = assetPairService;
-            _transferToMerchantService = transferToMerchantService;
             _lykkeBalanceService = lykkeBalanceService;                        
-            _accuracyRoundHelper = accuracyRoundHelper;
             _statusService = statusService;
             _settings = settings;
 
@@ -74,7 +69,8 @@ namespace Lykke.Service.PaySettlement.Services
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.Error(ex, "Process transaction payment requests is failed.", 
+                    new { TransactionHash = transactionHash });
             }
         }
 
@@ -82,34 +78,36 @@ namespace Lykke.Service.PaySettlement.Services
         {
             try
             {
-                decimal marketAmount = paymentRequest.PaidAmount - paymentRequest.PaidAmount * fee / total;
-                marketAmount = (decimal) _accuracyRoundHelper.Round((double) marketAmount,
-                    paymentRequest.PaymentAssetId);
-
-                await _statusService.SetTransferredToMarketAsync(paymentRequest.Id, marketAmount, fee);
-
                 AssetPair assetPair = _assetPairService.GetAssetPair(paymentRequest.PaymentAssetId,
                     paymentRequest.SettlementAssetId);
 
-                await _tradeOrdersRepository.InsertOrMergeTradeOrderAsync(new TradeOrder()
+                OrderAction orderAction = string.Equals(assetPair.BaseAssetId, paymentRequest.PaymentAssetId,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? OrderAction.Sell
+                    : OrderAction.Buy;
+
+                decimal marketAmount = paymentRequest.PaidAmount - paymentRequest.PaidAmount * fee / total;
+                marketAmount = marketAmount.TruncateDecimalPlaces(IsStraight(orderAction)
+                        ? assetPair.Accuracy
+                        : assetPair.InvertedAccuracy);
+
+                await _statusService.SetTransferredToMarketAsync(new TradeOrder()
                 {
+                    MerchantId = paymentRequest.MerchantId,
                     PaymentRequestId = paymentRequest.Id,
                     Volume = marketAmount,
                     AssetPairId = assetPair.Id,
                     PaymentAssetId = paymentRequest.PaymentAssetId,
                     SettlementAssetId = paymentRequest.SettlementAssetId,
-                    OrderAction =
-                        string.Equals(assetPair.BaseAssetId, paymentRequest.PaymentAssetId,
-                            StringComparison.OrdinalIgnoreCase)
-                            ? OrderAction.Sell
-                            : OrderAction.Buy
-                });
+                    OrderAction = orderAction
+                }, fee);
             }
-            catch (ArgumentException ex)
+            catch (Exception ex)
             {
                 _log.Error(ex, "Payment request can not be settled.",
                     new {PaymentRequestId = paymentRequest.Id});
-                await _statusService.SetErrorAsync(paymentRequest.Id, $"Can not add to trade queue: {ex}.");
+                await _statusService.SetErrorAsync(paymentRequest.MerchantId, paymentRequest.Id,
+                    $"Can not add to trade queue: {ex}.");
             }
         }
 
@@ -155,13 +153,13 @@ namespace Lykke.Service.PaySettlement.Services
                     return;
                 }
 
-                MarketOrderModel model = new MarketOrderModel()
+                var model = new MarketOrderModel()
                 {
                     Id = Guid.NewGuid().ToString(),
                     AssetPairId = tradeOrder.AssetPairId,
                     ClientId = _settings.ClientId,
                     OrderAction = OrderAction.Sell,
-                    Straight = tradeOrder.OrderAction == OrderAction.Sell,
+                    Straight = IsStraight(tradeOrder.OrderAction),
                     Volume = (double)tradeOrder.Volume
                 };
 
@@ -184,15 +182,19 @@ namespace Lykke.Service.PaySettlement.Services
                 _lykkeBalanceService.AddAsset(tradeOrder.PaymentAssetId, -tradeOrder.Volume);
                 _lykkeBalanceService.AddAsset(tradeOrder.SettlementAssetId, tradeOrder.Volume * (decimal)response.Price);
                 await _tradeOrdersRepository.DeleteAsync(tradeOrder);
-                await _statusService.SetExchangedAsync(tradeOrder.PaymentRequestId,
+                await _statusService.SetExchangedAsync(tradeOrder.MerchantId, tradeOrder.PaymentRequestId,
                     (decimal) response.Price, model.Id);
-                await _transferToMerchantService.AddToQueue(tradeOrder.PaymentRequestId);
             }
             catch (Exception ex)
             {
                 _log.Error(ex,"Can not exchange.", new { tradeOrder.PaymentRequestId });
             }
-        }        
+        }
+
+        private bool IsStraight(OrderAction orderAction)
+        {
+            return orderAction == OrderAction.Sell;
+        }
 
         public void Dispose()
         {

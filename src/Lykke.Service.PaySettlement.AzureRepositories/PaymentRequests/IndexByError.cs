@@ -1,6 +1,5 @@
 ﻿using AzureStorage.Tables.Templates.Index;
 using System;
-using Lykke.Service.PaySettlement.Core.Domain;
 
 namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 {
@@ -21,21 +20,10 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             return id;
         }
 
-        internal static bool IsIndexable(IPaymentRequest entity)
-        {
-            return entity.Error;
-        }
-
-        internal static AzureIndex Create(PaymentRequestEntity entity)
-        {
-            return AzureIndex.Create(GeneratePartitionKey(),
-                GenerateRowKey(entity.Id), entity);
-        }
-
-        internal static AzureIndex Create(string id)
+        internal static AzureIndex Create(string merchantId, string id)
         {
             return AzureIndex.Create(GeneratePartitionKey(), GenerateRowKey(id),
-                PaymentRequestEntity.GetPartitionKey(), PaymentRequestEntity.GetRowKey(id));
+                PaymentRequestEntity.GetPartitionKey(merchantId), PaymentRequestEntity.GetRowKey(id));
         }
     }
 }

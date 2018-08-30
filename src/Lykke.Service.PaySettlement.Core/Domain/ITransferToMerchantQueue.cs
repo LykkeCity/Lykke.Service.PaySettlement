@@ -5,7 +5,7 @@ namespace Lykke.Service.PaySettlement.Core.Domain
 {
     public interface ITransferToMerchantQueue
     {
-        Task AddAsync(TransferToMerchantMessage transferToMerchantMessage);
+        Task AddPaymentRequestsAsync(IPaymentRequest paymentRequest);
         Task<bool> ProcessTransferAsync(Func<TransferToMerchantMessage, Task<bool>> processor);
     }
 }

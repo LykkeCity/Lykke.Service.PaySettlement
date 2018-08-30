@@ -6,9 +6,5 @@ namespace Lykke.Service.PaySettlement.Core.Services
     public interface INinjaClient
     {
         Task<GetTransactionResponse> GetTransactionAsync(string hash);
-
-        Task<GetBlockResponse> GetBlockAsync(int blockHeight);
-
-        Task<int> GetCurrentBlockNumberAsync();
     }
 }

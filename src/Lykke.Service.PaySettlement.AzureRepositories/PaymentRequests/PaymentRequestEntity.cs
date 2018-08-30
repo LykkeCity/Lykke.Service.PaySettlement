@@ -187,7 +187,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         public PaymentRequestEntity(IPaymentRequest paymentRequest)
         {
-            PartitionKey = GetPartitionKey();
+            PartitionKey = GetPartitionKey(paymentRequest.MerchantId);
             RowKey = GetRowKey(paymentRequest.Id);
             Id = paymentRequest.Id;
             OrderId = paymentRequest.OrderId;
@@ -216,9 +216,14 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             ErrorDescription = paymentRequest.ErrorDescription;
         }
 
-        internal static string GetPartitionKey()
+        internal static string GetPartitionKey(string merchantId)
         {
-            return "PaymentRequest";
+            if (string.IsNullOrEmpty(merchantId))
+            {
+                throw new ArgumentNullException(nameof(merchantId));
+            }
+
+            return merchantId;
         }
 
         internal static string GetRowKey(string id)
