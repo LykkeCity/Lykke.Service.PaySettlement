@@ -31,10 +31,12 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 GenerateRowKey(entity.Id), entity);
         }
 
-        internal static AzureIndex Create(string id, string transferToMarketTransactionHash)
+        internal static AzureIndex Create(string merchantId, string id, 
+            string transferToMarketTransactionHash)
         {
-            return AzureIndex.Create(GeneratePartitionKey(transferToMarketTransactionHash), GenerateRowKey(id),
-                PaymentRequestEntity.GetPartitionKey(), PaymentRequestEntity.GetRowKey(id));
+            return AzureIndex.Create(GeneratePartitionKey(transferToMarketTransactionHash), 
+                GenerateRowKey(id), PaymentRequestEntity.GetPartitionKey(merchantId), 
+                PaymentRequestEntity.GetRowKey(id));
         }
     }
 }

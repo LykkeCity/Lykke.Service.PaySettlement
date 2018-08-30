@@ -23,21 +23,6 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.TransferToMarket
             await _queue.PutRawMessageAsync(new TransferToMarketMessage(paymentRequest).ToJson());
         }
 
-        public async Task<bool> ProcessTransferAsync(Func<TransferToMarketMessage, Task<bool>> processor)
-        {
-            var rawMessage = await _queue.GetRawMessageAsync();
-            if(rawMessage == null)
-                return false;
-
-            var message = rawMessage.AsString.DeserializeJson<TransferToMarketMessage>();
-            if (await processor(message))
-            {
-                await _queue.FinishRawMessageAsync(rawMessage);
-            }
-
-            return true;
-        }
-
         public async Task<int> ProcessTransferAsync(Func<TransferToMarketMessage[], Task<bool>> processor,
             int maxCount = int.MaxValue)
         {

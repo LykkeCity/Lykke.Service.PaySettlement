@@ -15,16 +15,16 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.TransferToMerchant
             _queue = queue;
         }
 
-        public async Task AddAsync(TransferToMerchantMessage transferToMerchantMessage)
+        public async Task AddPaymentRequestsAsync(IPaymentRequest paymentRequest)
         {
-            await _queue.PutRawMessageAsync(transferToMerchantMessage.ToJson());
+            await _queue.PutRawMessageAsync(new TransferToMerchantMessage(paymentRequest).ToJson());
         }
 
         public async Task<bool> ProcessTransferAsync(Func<TransferToMerchantMessage, Task<bool>> processor)
         {
             var rawMessage = await _queue.GetRawMessageAsync();
             if (rawMessage == null)
-                return true;
+                return false;
 
             var message = rawMessage.AsString.DeserializeJson<TransferToMerchantMessage>();
             if (await processor(message))

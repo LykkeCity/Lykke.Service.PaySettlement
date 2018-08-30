@@ -66,9 +66,6 @@ namespace Lykke.Service.PaySettlement.Modules
                 .SingleInstance()
                 .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService);
 
-            builder.RegisterType<AccuracyRoundHelper>()
-                .As<IAccuracyRoundHelper>();
-
             builder.RegisterType<StatusService>()
                 .As<IStatusService>()
                 .SingleInstance();
@@ -90,7 +87,6 @@ namespace Lykke.Service.PaySettlement.Modules
                 .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService);
 
             builder.RegisterType<TransferToMerchantService>()
-                .As<ITransferToMerchantService>()
                 .As<IStartable>()
                 .As<IStopable>()
                 .AutoActivate()

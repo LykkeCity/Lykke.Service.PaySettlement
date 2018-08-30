@@ -78,12 +78,6 @@ namespace Lykke.Service.PaySettlement.Services
             _assetPairs[settlementAssetId.ToUpper()] = assetPair;
         }
 
-        public AssetPair GetAssetPair(string assetPairId)
-        {
-            return _assetPairs.Values.First(p =>
-                string.Equals(p.Id, assetPairId, StringComparison.OrdinalIgnoreCase));
-        }
-
         public AssetPair GetAssetPair(string paymentAssetId, string settlementAssetId)
         {
             if(!string.Equals(paymentAssetId, _settings.PaymentAssetId, StringComparison.OrdinalIgnoreCase ))

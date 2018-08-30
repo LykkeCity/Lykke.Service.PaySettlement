@@ -7,8 +7,6 @@ namespace Lykke.Service.PaySettlement.Core.Domain
     {
         Task InsertOrMergeTradeOrderAsync(ITradeOrder tradeOrder);
         Task<IEnumerable<ITradeOrder>> GetAsync();
-        Task<IEnumerable<ITradeOrder>> GetAsync(string assetPair);
         Task DeleteAsync(ITradeOrder tradeOrder);
-        Task DeleteAsync(IEnumerable<ITradeOrder> tradeOrders);
     }
 }

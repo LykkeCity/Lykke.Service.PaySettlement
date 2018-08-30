@@ -15,64 +15,31 @@ using System.Timers;
 
 namespace Lykke.Service.PaySettlement.Services
 {
-    public class TransferToMerchantService : IStartable, IStopable, ITransferToMerchantService
+    public class TransferToMerchantService : IStartable, IStopable
     {
         private readonly ITransferToMerchantQueue _transferToMerchantQueue;
-        private readonly IPaymentRequestsRepository _paymentRequestsRepository;
         private readonly ILog _log;        
         private readonly TransferToMerchantServiceSettings _settings;
         private readonly IAssetService _assetService;
         private readonly ILykkeBalanceService _lykkeBalanceService;
-        private readonly IAccuracyRoundHelper _accuracyRoundHelper;
         private readonly IStatusService _statusService;
         private readonly IExchangeOperationsServiceClient _exchangeOperationsServiceClient;
         private readonly Timer _timer;
 
         public TransferToMerchantService(ITransferToMerchantQueue transferToMerchantQueue,
-            IPaymentRequestsRepository paymentRequestsRepository, 
             TransferToMerchantServiceSettings settings, IAssetService assetService, 
             ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory,
-            IAccuracyRoundHelper accuracyRoundHelper, IStatusService statusService,
-            IExchangeOperationsServiceClient exchangeOperationsServiceClient)
+            IStatusService statusService, IExchangeOperationsServiceClient exchangeOperationsServiceClient)
         {
             _transferToMerchantQueue = transferToMerchantQueue;
-            _paymentRequestsRepository = paymentRequestsRepository;
             _log = logFactory.CreateLog(this);
             _settings = settings;
             _assetService = assetService;
-            _accuracyRoundHelper = accuracyRoundHelper;
             _lykkeBalanceService = lykkeBalanceService;
             _statusService = statusService;
             _exchangeOperationsServiceClient = exchangeOperationsServiceClient;
 
             _timer = new Timer(settings.Interval.TotalMilliseconds);            
-        }
-
-        public async Task AddToQueue(string paymentRequestId)
-        {
-            try
-            {
-                IPaymentRequest paymentRequest = await _paymentRequestsRepository.GetAsync(paymentRequestId);
-                if (paymentRequest == null)
-                {
-                    _log.Error(null, $"Payment request {paymentRequestId} is not found.",
-                        new {PaymentRequestId = paymentRequestId});
-                    return;
-                }
-
-                await _transferToMerchantQueue.AddAsync(new TransferToMerchantMessage()
-                {
-                    PaymentRequestId = paymentRequestId,
-                    MerchantClientId = paymentRequest.MerchantClientId,
-                    Amount = paymentRequest.Amount,
-                    AssetId = paymentRequest.SettlementAssetId
-                });
-                
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex);
-            }
         }
 
         public void Start()
@@ -118,12 +85,12 @@ namespace Lykke.Service.PaySettlement.Services
                 {
                     destClientId = message.MerchantClientId,
                     sourceClientId = _settings.ClientId,
-                    amount = _accuracyRoundHelper.Round((double)message.Amount, asset),
+                    amount = message.Amount.TruncateDecimalPlaces(asset.Accuracy),
                     assetId = message.AssetId
                 };
 
                 ExchangeOperationResult result = await _exchangeOperationsServiceClient.TransferAsync(
-                    request.destClientId, request.sourceClientId, request.amount, request.assetId);
+                    request.destClientId, request.sourceClientId, (double)request.amount, request.assetId);
 
                 if (result.Code != (int)MeStatusCodes.Ok)
                 {
@@ -132,9 +99,9 @@ namespace Lykke.Service.PaySettlement.Services
                     return false;
                 }
 
-                _lykkeBalanceService.AddAsset(message.AssetId, -(decimal)request.amount);
-                await _statusService.SetTransferredToMerchantAsync(message.PaymentRequestId, 
-                    (decimal) request.amount);
+                _lykkeBalanceService.AddAsset(message.AssetId, -request.amount);
+                await _statusService.SetTransferredToMerchantAsync(message.MerchantId, 
+                    message.PaymentRequestId, request.amount);
 
                 return true;
             }

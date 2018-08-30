@@ -4,6 +4,8 @@ namespace Lykke.Service.PaySettlement.Core.Domain
 {
     public class TradeOrder : ITradeOrder
     {
+        public string MerchantId { get; set; }
+
         public string PaymentRequestId { get; set; }
 
         public string AssetPairId { get; set; }
