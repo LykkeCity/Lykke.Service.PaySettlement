@@ -1,5 +1,4 @@
 ﻿using JetBrains.Annotations;
-using Lykke.Common.Chaos;
 using Lykke.Service.PaySettlement.Core.Settings;
 
 namespace Lykke.Service.PaySettlement.Settings
@@ -9,8 +8,6 @@ namespace Lykke.Service.PaySettlement.Settings
     {
         public DbSettings Db { get; set; }
 
-        public ChaosSettings ChaosKitty { get; set; }
-
         public RabbitMqSubscriberSettings PaymentRequestsSubscriber { get; set; }
 
         public RabbitMqPublisherSettings SettlementStatusPublisher { get; set; }
@@ -19,7 +16,13 @@ namespace Lykke.Service.PaySettlement.Settings
 
         public TransferToMarketServiceSettings TransferToMarketService { get; set; }
 
+        public AssetServiceSettings AssetService { get; set; }
+
         public TransferToMerchantServiceSettings TransferToMerchantService { get; set; }
+
+        public string ClientId { get; set; }
+
+        public string CqrsEnvironment { get; set; }
 
         public bool IsMainNet { get; set; }
     }

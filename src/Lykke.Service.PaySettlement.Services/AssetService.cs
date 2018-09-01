@@ -6,35 +6,35 @@ using Lykke.Service.Assets.Client;
 using Lykke.Service.Assets.Client.Models;
 using Lykke.Service.PaySettlement.Core.Services;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Lykke.Service.PaySettlement.Services
 {
-    public class AssetService: IStartable, IAssetService
+    public class AssetService: TimerPeriod, IAssetService
     {
         private readonly IAssetsService _assetsService;
         private readonly ILog _log;
         private readonly Core.Settings.AssetServiceSettings _settings;
-        private readonly Dictionary<string, AssetPair> _assetPairs;
-        private readonly Dictionary<string, Asset> _assets;
+        private readonly ConcurrentDictionary<string, AssetPair> _assetPairs;
+        private readonly ConcurrentDictionary<string, Asset> _assets;
 
         public AssetService(IAssetsService assetsService, ILogFactory logFactory,
-            Core.Settings.AssetServiceSettings settings)
+            Core.Settings.AssetServiceSettings settings):base(settings.ExpirationPeriod, logFactory)
         {
             _assetsService = assetsService;
             _log = logFactory.CreateLog(this);
             _settings = settings;
-            _assetPairs = new Dictionary<string, AssetPair>();
-            _assets = new Dictionary<string, Asset>();
+            _assetPairs = new ConcurrentDictionary<string, AssetPair>();
+            _assets = new ConcurrentDictionary<string, Asset>();
         }
 
-        public void Start()
+        public override async Task Execute()
         {
             var assetGetAllTask = _assetsService.AssetGetAllAsync();
             var assetPairGetAllTask = _assetsService.AssetPairGetAllAsync();
-            Task.WhenAll(assetGetAllTask, assetPairGetAllTask).GetAwaiter().GetResult();
+            await Task.WhenAll(assetGetAllTask, assetPairGetAllTask);
 
             Asset[] assets = assetGetAllTask.Result.ToArray();
             AssetPair[] assetPairs = assetPairGetAllTask.Result.Where(p =>
@@ -60,7 +60,7 @@ namespace Lykke.Service.PaySettlement.Services
                 _log.Critical(null, $"Asset {assetId} is not found.");
             }
 
-            _assets[assetId.ToUpper()] = asset;
+            _assets.AddOrUpdate(assetId.ToUpper(), asset, (k, a) => asset);
         }
 
         private void FillAssetPair(AssetPair[] assetPairs, string settlementAssetId)
@@ -75,7 +75,7 @@ namespace Lykke.Service.PaySettlement.Services
                                     $"and {_settings.PaymentAssetId} is not found.");
             }
 
-            _assetPairs[settlementAssetId.ToUpper()] = assetPair;
+            _assetPairs.AddOrUpdate(settlementAssetId.ToUpper(), assetPair, (k, a) => assetPair);
         }
 
         public AssetPair GetAssetPair(string paymentAssetId, string settlementAssetId)
@@ -103,6 +103,18 @@ namespace Lykke.Service.PaySettlement.Services
             }
 
             return asset;
+        }
+
+        public bool IsPaymentAssetIdValid(string paymentAssetId)
+        {
+            return string.Equals(paymentAssetId, _settings.PaymentAssetId,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        public bool IsSettlementAssetIdValid(string settlementAssetId)
+        {
+            return _settings.SettlementAssetIds.Contains(settlementAssetId,
+                StringComparer.OrdinalIgnoreCase);
         }
     }
 }

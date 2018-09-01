@@ -4,8 +4,6 @@ namespace Lykke.Service.PaySettlement.Core.Settings
 {
     public class TradeServiceSettings
     {
-        public TimeSpan Interval { get; set; }
-
-        public string ClientId { get; set; }
+        public TimeSpan Interval { get; set; }        
     }
 }

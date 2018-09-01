@@ -1,14 +1,13 @@
-﻿using System;
-using Common.Log;
+﻿using Common.Log;
 using Lykke.Common.Log;
 using Lykke.Service.PaySettlement.Core.Services;
-using System.Threading.Tasks;
-using Lykke.Service.PaySettlement.Core.Domain;
 using NBitcoin;
+using System;
+using System.Threading.Tasks;
 
 namespace Lykke.Service.PaySettlement.Cqrs
 {
-    public class TransactionProjection
+    public class ConfirmationsSaga
     {
         private readonly ITradeService _tradeService;
         private readonly INinjaClient _ninjaClient;
@@ -17,7 +16,7 @@ namespace Lykke.Service.PaySettlement.Cqrs
         private readonly ILog _log;
         private const MoneyUnit MoneyUnit = NBitcoin.MoneyUnit.BTC;
 
-        public TransactionProjection(ITradeService tradeService, 
+        public ConfirmationsSaga(ITradeService tradeService, 
             INinjaClient ninjaClient, string multisigWalletAddress, bool isMainNet, 
             ILogFactory logFactory)
         {
@@ -56,13 +55,14 @@ namespace Lykke.Service.PaySettlement.Cqrs
                     _log.Info($"Lykke Pay to Multisig transaction is executed. Fee is {fee}.",
                         new { TransactionHash = transactionEvent.TransactionHash });
 
-                    await _tradeService.AddToQueueIfTransferred(transactionEvent.TransactionHash, fee);
+                    await _tradeService.AddToQueueIfTransferredAsync(transactionEvent.TransactionHash, fee);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                _log.Error(e, $"Process transaction is failed.",
+                _log.Error(ex, "Process transaction is failed.",
                     new { TransactionHash = transactionEvent.TransactionHash });
+                throw;
             }
         }
     }

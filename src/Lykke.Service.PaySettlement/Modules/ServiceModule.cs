@@ -62,9 +62,10 @@ namespace Lykke.Service.PaySettlement.Modules
             builder.RegisterType<AssetService>()
                 .As<IAssetService>()
                 .As<IStartable>()
+                .As<IStopable>()
                 .AutoActivate()
                 .SingleInstance()
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService);
+                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.AssetService);
 
             builder.RegisterType<StatusService>()
                 .As<IStatusService>()
@@ -76,7 +77,8 @@ namespace Lykke.Service.PaySettlement.Modules
                 .As<IStopable>()
                 .AutoActivate()
                 .SingleInstance()
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TradeService);
+                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TradeService)
+                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);
 
             builder.RegisterType<TransferToMarketService>()
                 .As<ITransferToMarketService>()
@@ -91,7 +93,8 @@ namespace Lykke.Service.PaySettlement.Modules
                 .As<IStopable>()
                 .AutoActivate()
                 .SingleInstance()
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TransferToMerchantService);
+                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TransferToMerchantService)
+                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);
 
             builder.RegisterType<PaymentRequestsSubscriber>()
                 .As<IStartable>()
@@ -110,7 +113,7 @@ namespace Lykke.Service.PaySettlement.Modules
 
             builder.RegisterType<LykkeBalanceService>()
                 .As<ILykkeBalanceService>()
-                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.TradeService.ClientId);
+                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);
 
             builder.RegisterBalancesClient(_appSettings.CurrentValue.BalancesServiceClient);
         }

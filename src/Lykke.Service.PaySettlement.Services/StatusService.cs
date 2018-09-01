@@ -36,7 +36,11 @@ namespace Lykke.Service.PaySettlement.Services
             await _transferToMarketQueue.AddPaymentRequestsAsync(paymentRequest);
 
             _log.Info($"Payment request status is changed to {SettlementStatus.TransferToMarketQueued}.",
-                new {PaymentRequestId = paymentRequest.Id});
+                new
+                {
+                    paymentRequest.MerchantId,
+                    PaymentRequestId = paymentRequest.Id
+                });
             return paymentRequest;
         }
 
@@ -47,11 +51,13 @@ namespace Lykke.Service.PaySettlement.Services
                 id, transactionHash);
             await _settlementStatusPublisher.PublishAsync(paymentRequest);
 
-            _log.Info($"Payment request status is changed to {SettlementStatus.TransferringToMarket}.", 
-                new {
-                PaymentRequestId = paymentRequest.Id,
-                TransactionHash = transactionHash,
-            });
+            _log.Info($"Payment request status is changed to {SettlementStatus.TransferringToMarket}.",
+                new
+                {
+                    paymentRequest.MerchantId,
+                    PaymentRequestId = paymentRequest.Id,
+                    TransactionHash = transactionHash
+                });
             return paymentRequest;
         }
 
@@ -64,7 +70,11 @@ namespace Lykke.Service.PaySettlement.Services
             await _tradeOrdersRepository.InsertOrMergeTradeOrderAsync(tradeOrder);
 
             _log.Info($"Payment request status is changed to {SettlementStatus.TransferredToMarket}.", 
-                new { PaymentRequestId = paymentRequest.Id });
+                new
+                {
+                    paymentRequest.MerchantId,
+                    PaymentRequestId = paymentRequest.Id
+                });
             return paymentRequest;
         }
 
@@ -77,7 +87,11 @@ namespace Lykke.Service.PaySettlement.Services
             await _transferToMerchantQueue.AddPaymentRequestsAsync(paymentRequest);
 
             _log.Info($"Payment request status is changed to {SettlementStatus.Exchanged}.", 
-                new { PaymentRequestId = paymentRequest.Id });
+                new
+                {
+                    paymentRequest.MerchantId,
+                    PaymentRequestId = paymentRequest.Id
+                });
             return paymentRequest;
         }
 
@@ -90,7 +104,11 @@ namespace Lykke.Service.PaySettlement.Services
 
             _log.Info($"Payment request status is changed to {SettlementStatus.TransferredToMerchant}. " +
                       $"Transferred {transferredAmount} {paymentRequest.SettlementAssetId}.", 
-                new { PaymentRequestId = paymentRequest.Id });
+                new
+                {
+                    paymentRequest.MerchantId,
+                    PaymentRequestId = paymentRequest.Id
+                });
             return paymentRequest;
         }
 
@@ -100,8 +118,13 @@ namespace Lykke.Service.PaySettlement.Services
             var paymentRequest = await _paymentRequestsRepository.SetErrorAsync(merchantId, id,
                 errorDescription);
             await _settlementStatusPublisher.PublishAsync(paymentRequest);
+
             _log.Info($"Payment request error is setted with description {errorDescription}.", 
-                new { PaymentRequestId = paymentRequest.Id });
+                new
+                {
+                    paymentRequest.MerchantId,
+                    PaymentRequestId = paymentRequest.Id
+                });
             return paymentRequest;
         }
     }

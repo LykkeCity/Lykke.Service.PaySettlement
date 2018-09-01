@@ -1,7 +1,6 @@
 ﻿using AzureStorage;
 using Lykke.Service.PaySettlement.Core.Domain;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
@@ -27,7 +26,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
 
         public Task DeleteAsync(ITradeOrder tradeOrder)
         {
-            return _storage.DeleteAsync(TradeOrderEntity.GetPartitionKey(tradeOrder.AssetPairId),
+            return _storage.DeleteIfExistAsync(TradeOrderEntity.GetPartitionKey(tradeOrder.AssetPairId),
                 TradeOrderEntity.GetRowKey(tradeOrder.PaymentRequestId));
         }
     }

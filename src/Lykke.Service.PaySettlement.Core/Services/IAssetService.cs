@@ -6,5 +6,7 @@ namespace Lykke.Service.PaySettlement.Core.Services
     {
         AssetPair GetAssetPair(string paymentAssetId, string settlementAssetId);
         Asset GetAsset(string assetId);
+        bool IsPaymentAssetIdValid(string paymentAssetId);
+        bool IsSettlementAssetIdValid(string settlementAssetId);
     }
 }
