@@ -4,6 +4,6 @@ namespace Lykke.Service.PaySettlement.Core.Services
 {
     public interface ITradeService
     {
-        Task AddToQueueIfTransferred(string transactionHash, decimal fee);
+        Task AddToQueueIfTransferredAsync(string transactionHash, decimal fee);
     }
 }

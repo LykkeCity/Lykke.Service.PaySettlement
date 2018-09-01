@@ -1,5 +1,4 @@
-﻿using Autofac;
-using Common;
+﻿using Common;
 using Common.Log;
 using Lykke.Common.Log;
 using Lykke.Service.PayInternal.Client;
@@ -12,73 +11,97 @@ using Lykke.Service.PaySettlement.Core.Settings;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
-using System.Timers;
+using Lykke.Common.ApiLibrary.Exceptions;
 using PaymentRequestStatus = Lykke.Service.PayInternal.Contract.PaymentRequest.PaymentRequestStatus;
 
 namespace Lykke.Service.PaySettlement.Services
 {
-    public class TransferToMarketService : IStartable, IStopable, ITransferToMarketService
+    public class TransferToMarketService : TimerPeriod, ITransferToMarketService
     {
         private readonly ITransferToMarketQueue _transferToMarketQueue;        
         private readonly IPayInternalClient _payInternalClient;
         private readonly IPayMerchantClient _payMerchantClient;
         private readonly IPaymentRequestsRepository _paymentRequestsRepository;
         private readonly IStatusService _statusService;
-        private readonly TransferToMarketServiceSettings _settings;
+        private readonly IAssetService _assetService;
+        private readonly TransferToMarketServiceSettings _settings;        
         private readonly ILog _log;
-        private readonly Timer _timer;
 
         public TransferToMarketService(ITransferToMarketQueue transferToMarketQueue,
             IPayInternalClient payInternalClient, IPayMerchantClient payMerchantClient, 
             IPaymentRequestsRepository paymentRequestsRepository, IStatusService statusService,
-            TransferToMarketServiceSettings settings, ILogFactory logFactory)
+            IAssetService assetService, TransferToMarketServiceSettings settings, 
+            ILogFactory logFactory):base(settings.Interval, logFactory)
         {
             _transferToMarketQueue = transferToMarketQueue;
             _payInternalClient = payInternalClient;
             _payMerchantClient = payMerchantClient;
             _paymentRequestsRepository = paymentRequestsRepository;
             _statusService = statusService;
+            _assetService = assetService;
             _settings = settings;
             _log = logFactory.CreateLog(this);
-            _timer = new Timer(settings.Interval.TotalMilliseconds);            
         }
 
-        public async Task AddToQueueIfSettlement(IPaymentRequest paymentRequest)
+        public async Task AddToQueueIfSettlementAsync(IPaymentRequest paymentRequest)
         {
             if (paymentRequest.Status != PaymentRequestStatus.Confirmed)
             {
                 return;
             }
 
-            if (!string.Equals(paymentRequest.PaymentAssetId, _settings.PaymentAssetId,
-                StringComparison.OrdinalIgnoreCase))
+            if (!_assetService.IsPaymentAssetIdValid(paymentRequest.PaymentAssetId))
             {
                 _log.Info($"Skip payment request because payment assetId is {paymentRequest.PaymentAssetId}.",
-                    new {PaymentRequestId = paymentRequest.Id});
+                    new
+                    {
+                        paymentRequest.MerchantId,
+                        PaymentRequestId = paymentRequest.Id
+                    });
                 return;
             }
 
-            if (!_settings.SettlementAssetIds.Contains(paymentRequest.SettlementAssetId,
-                StringComparer.OrdinalIgnoreCase))
+            if (!_assetService.IsSettlementAssetIdValid(paymentRequest.SettlementAssetId))
             {
-                _log.Info($"Skip payment request because settlement assetId is {paymentRequest.PaymentAssetId}.",
-                    new {PaymentRequestId = paymentRequest.Id});
+                _log.Info($"Skip payment request because settlement assetId is {paymentRequest.SettlementAssetId}.",
+                    new
+                    {
+                        paymentRequest.MerchantId,
+                        PaymentRequestId = paymentRequest.Id
+                    });
                 return;
             }
 
-            MerchantModel merchant = await _payMerchantClient.Api.GetByIdAsync(paymentRequest.MerchantId);
+            MerchantModel merchant = null;
+            try
+            {
+                merchant = await _payMerchantClient.Api.GetByIdAsync(paymentRequest.MerchantId);
+            }
+            catch (ClientApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+            {
+            }
+            
             if (merchant == null)
             {
                 _log.Error(null, $"Merchant {paymentRequest.MerchantId} is not found.",
-                    new {PaymentRequestId = paymentRequest.Id});
+                    new
+                    {
+                        paymentRequest.MerchantId,
+                        PaymentRequestId = paymentRequest.Id
+                    });
                 return;
             }
 
             if (string.IsNullOrEmpty(merchant.LwId))
             {
                 _log.Info("Skip payment request because merchant Lykke wallet is not set.",
-                    new {PaymentRequestId = paymentRequest.Id});
+                    new
+                    {
+                        paymentRequest.MerchantId,
+                        PaymentRequestId = paymentRequest.Id
+                    });
                 return;
             }
 
@@ -91,26 +114,13 @@ namespace Lykke.Service.PaySettlement.Services
                 paymentRequest.Id);
         }
 
-        public void Start()
+        public override async Task Execute()
         {
-            _timer.Elapsed += async (sender, e) => await TransferAsync();
-            _timer.Start();
-        }
-
-        private async Task TransferAsync()
-        {
-            try
+            int processed = int.MaxValue;
+            while (processed > 0)
             {
-                int processed = int.MaxValue;
-                while (processed > 0)
-                {
-                    processed = await _transferToMarketQueue.ProcessTransferAsync(TransferAsync,
-                        _settings.MaxTransfersPerTransaction);
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex);
+                processed = await _transferToMarketQueue.ProcessTransferAsync(TransferAsync,
+                    _settings.MaxTransfersPerTransaction);
             }
         }
 
@@ -158,19 +168,9 @@ namespace Lykke.Service.PaySettlement.Services
             }
             catch (Exception ex)
             {
-                _log.Error(ex, $"Transfer is failed: {messages.ToJson()}");
+                _log.Error(ex, $"Transfer to market is failed: {messages.ToJson()}");
                 return false;
             }
-        }
-
-        public void Dispose()
-        {
-            _timer?.Dispose();
-        }
-
-        public void Stop()
-        {
-            _timer?.Stop();
         }
     }
 }

@@ -42,6 +42,8 @@ namespace Lykke.Service.PaySettlement.Rabbit
                 .SetSerializer(new JsonMessageSerializer<ISettlementStatusChangedEvent>())
                 .SetPublishStrategy(new DefaultFanoutPublishStrategy(settings))
                 .Start();
+
+            _log.Info($"<< {nameof(SettlementStatusPublisher)} is started.");
         }
 
         public Task PublishAsync(IPaymentRequest paymentRequest)
@@ -64,6 +66,8 @@ namespace Lykke.Service.PaySettlement.Rabbit
         public void Stop()
         {
             _publisher?.Stop();
+
+            _log.Info($"<< {nameof(SettlementStatusPublisher)} is stopped.");
         }
     }
 }

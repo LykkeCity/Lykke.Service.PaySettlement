@@ -10,8 +10,6 @@ PaySettlementService:
         TradeOrdersTableName: TradeOrders
         TransferToMarketQueue: TransferToMarket
         TransferToMerchantQueue: TransferToMerchant
-    ChaosKitty:
-        StateOfChaos: 0.2
     PaymentRequestsSubscriber:
         ConnectionString: 
             settings-key: GeneralRabbitMqConnectionString
@@ -33,9 +31,6 @@ PaySettlementService:
         Interval:
             settings-key: PaySettlementService-TradeService-Interval
             types: [ Tag ]
-        ClientId: 
-            settings-key: PaySettlementService-TradeService-ClientId
-            types: [ Tag ]
     TransferToMarketService:
         Interval:
             settings-key: PaySettlementService-TransferToMarketService-Interval
@@ -46,19 +41,26 @@ PaySettlementService:
         MultisigWalletAddress:
             settings-key: PaySettlementService-TransferToMarketService-MultisigWalletAddress
             types: [ Tag ]
+    AssetService:
+        ExpirationPeriod:
+            settings-key: PaySettlementService-AssetService-ExpirationPeriod
+            types: [ Tag ]
         PaymentAssetId: 
-            settings-key: PaySettlementService-TransferToMarketService-PaymentAssetId
+            settings-key: PaySettlementService-AssetService-PaymentAssetId
             types: [ Tag ]
         SettlementAssetIds:
-            settings-key: PaySettlementService-TransferToMarketService-SettlementAssetIds
-            types: [ JsonArray, Tag ]
+            settings-key: PaySettlementService-AssetService-SettlementAssetIds
+            types: [ JsonArray, Tag ]    
     TransferToMerchantService:
         Interval:
             settings-key: PaySettlementService-TransferToMerchantService-Interval
             types: [ Tag ]
-        ClientId:
-            settings-key: PaySettlementService-TradeService-ClientId
-            types: [ Tag ]
+    ClientId: 
+        settings-key: PaySettlementService-ClientId
+        types: [ Tag ]            
+    CqrsEnvironment:
+        settings-key: PaySettlementService-CqrsEnvironment
+        types: [ Tag ]
     IsMainNet:
         settings-key: PaySettlementService-IsMainNet
         types: [ Tag ]

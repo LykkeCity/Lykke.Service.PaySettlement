@@ -24,21 +24,10 @@ namespace Lykke.Service.PaySettlement.Modules
 
         protected override void Load(ContainerBuilder builder)
         {
-            if (_appSettings.CurrentValue.PaySettlementService.ChaosKitty != null)
-            {
-                builder
-                    .RegisterType<ChaosKitty>()
-                    .WithParameter(TypedParameter.From(_appSettings.CurrentValue.PaySettlementService.ChaosKitty.StateOfChaos))
-                    .As<IChaosKitty>()
-                    .SingleInstance();
-            }
-            else
-            {
-                builder
-                    .RegisterType<SilentChaosKitty>()
-                    .As<IChaosKitty>()
-                    .SingleInstance();
-            }
+            builder
+                .RegisterType<SilentChaosKitty>()
+                .As<IChaosKitty>()
+                .SingleInstance();
 
             builder.Register(context => new AutofacDependencyResolver(context)).As<IDependencyResolver>().SingleInstance();
 
@@ -47,7 +36,7 @@ namespace Lykke.Service.PaySettlement.Modules
                 Uri = _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber.ConnectionString
             };
 
-            builder.RegisterType<TransactionProjection>()
+            builder.RegisterType<ConfirmationsSaga>()
                 .WithParameter("multisigWalletAddress", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService.MultisigWalletAddress)
                 .WithParameter("isMainNet", _appSettings.CurrentValue.PaySettlementService.IsMainNet);
 
@@ -72,12 +61,11 @@ namespace Lykke.Service.PaySettlement.Modules
                     Register.DefaultEndpointResolver(new RabbitMqConventionEndpointResolver(
                         "RabbitMq",
                         SerializationFormat.ProtoBuf,
-                        environment: "lykke.tx-detector")),
+                        environment: _appSettings.CurrentValue.PaySettlementService.CqrsEnvironment)),
 
-                Register.BoundedContext("paysettlement")
-                    .ListeningEvents(typeof(ConfirmationSavedEvent))
-                    .From("transactions").On("transactions-events")
-                    .WithProjection(typeof(TransactionProjection), "transactions")
+                    Register.Saga<ConfirmationsSaga>("paysettlement-transactions-saga")
+                        .ListeningEvents(typeof(ConfirmationSavedEvent))
+                        .From("transactions").On("transactions-events")
                 );
             })
             .As<ICqrsEngine>().SingleInstance().AutoActivate();

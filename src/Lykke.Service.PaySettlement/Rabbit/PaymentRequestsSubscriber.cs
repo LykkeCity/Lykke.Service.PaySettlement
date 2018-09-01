@@ -41,7 +41,7 @@ namespace Lykke.Service.PaySettlement.Rabbit
                 ConnectionString = _settings.ConnectionString,
                 QueueName = _settings.QueueName,
                 ExchangeName = _settings.ExchangeName,
-                IsDurable = false
+                IsDurable = true
             };
 
             _subscriber = new RabbitMqSubscriber<PaymentRequestDetailsMessage>(
@@ -75,7 +75,7 @@ namespace Lykke.Service.PaySettlement.Rabbit
         private Task ProcessMessageAsync(PaymentRequestDetailsMessage message)
         {
             var paymentRequest = _mapper.Map<PaymentRequest>(message);
-            return _transferToMarketService.AddToQueueIfSettlement(paymentRequest);
+            return _transferToMarketService.AddToQueueIfSettlementAsync(paymentRequest);
         }
     }
 }

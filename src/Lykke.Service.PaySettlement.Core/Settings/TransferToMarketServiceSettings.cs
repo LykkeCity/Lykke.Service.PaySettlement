@@ -2,7 +2,7 @@
 
 namespace Lykke.Service.PaySettlement.Core.Settings
 {
-    public class TransferToMarketServiceSettings : AssetServiceSettings
+    public class TransferToMarketServiceSettings
     {
         public TimeSpan Interval { get; set; }
 

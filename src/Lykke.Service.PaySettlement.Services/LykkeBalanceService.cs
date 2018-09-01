@@ -16,6 +16,7 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly string _clientId;
         private readonly ConcurrentDictionary<string, decimal> _balances;
         private readonly ILog _log;
+        private volatile bool _receivedFromServer = false;
 
         public LykkeBalanceService(IBalancesClient balancesClient, string clientId, ILogFactory logFactory)
         {
@@ -39,16 +40,17 @@ namespace Lykke.Service.PaySettlement.Services
             foreach (ClientBalanceResponseModel model in response)
             {
                 _balances.AddOrUpdate(model.AssetId,
-                    (decimal) model.Balance,
-                    (k, v) => (decimal) model.Balance);
+                    model.Balance,
+                    (k, v) => model.Balance);
             }
 
+            _receivedFromServer = true;
             _log.Info("Lykke balances are updated from the server.");
         }
 
         public void AddAsset(string assetId, decimal value)
         {
-            if (_balances.IsEmpty)
+            if (!_receivedFromServer)
             {
                 throw new InvalidOperationException($"Call {nameof(GetFromServerAsync)} before change balance.");
             }
@@ -60,6 +62,11 @@ namespace Lykke.Service.PaySettlement.Services
 
         public decimal GetAssetBalance(string assetId)
         {
+            if (!_receivedFromServer)
+            {
+                throw new InvalidOperationException($"Call {nameof(GetFromServerAsync)} before change balance.");
+            }
+
             if (_balances.TryGetValue(assetId, out var balance))
             {
                 return balance;

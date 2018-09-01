@@ -1,5 +1,4 @@
-﻿using Autofac;
-using Common;
+﻿using Common;
 using Common.Log;
 using Lykke.Common.Log;
 using Lykke.MatchingEngine.Connector.Models.Api;
@@ -11,58 +10,43 @@ using Lykke.Service.PaySettlement.Core.Services;
 using Lykke.Service.PaySettlement.Core.Settings;
 using System;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace Lykke.Service.PaySettlement.Services
 {
-    public class TransferToMerchantService : IStartable, IStopable
+    public class TransferToMerchantService : TimerPeriod
     {
         private readonly ITransferToMerchantQueue _transferToMerchantQueue;
-        private readonly ILog _log;        
-        private readonly TransferToMerchantServiceSettings _settings;
         private readonly IAssetService _assetService;
         private readonly ILykkeBalanceService _lykkeBalanceService;
         private readonly IStatusService _statusService;
         private readonly IExchangeOperationsServiceClient _exchangeOperationsServiceClient;
-        private readonly Timer _timer;
+        private readonly string _clientId;
+        private readonly ILog _log;
 
         public TransferToMerchantService(ITransferToMerchantQueue transferToMerchantQueue,
-            TransferToMerchantServiceSettings settings, IAssetService assetService, 
-            ILykkeBalanceService lykkeBalanceService, ILogFactory logFactory,
-            IStatusService statusService, IExchangeOperationsServiceClient exchangeOperationsServiceClient)
+            IAssetService assetService, ILykkeBalanceService lykkeBalanceService, 
+            IStatusService statusService, IExchangeOperationsServiceClient exchangeOperationsServiceClient,
+            string clientId, ILogFactory logFactory, TransferToMerchantServiceSettings settings)
+            :base(settings.Interval, logFactory)
         {
             _transferToMerchantQueue = transferToMerchantQueue;
-            _log = logFactory.CreateLog(this);
-            _settings = settings;
             _assetService = assetService;
             _lykkeBalanceService = lykkeBalanceService;
             _statusService = statusService;
             _exchangeOperationsServiceClient = exchangeOperationsServiceClient;
+            _clientId = clientId;
 
-            _timer = new Timer(settings.Interval.TotalMilliseconds);            
+            _log = logFactory.CreateLog(this);
         }
 
-        public void Start()
+        public override async Task Execute()
         {
-            _timer.Elapsed += async (sender, e) => await TransferAsync();
-            _timer.Start();
-        }
+            await _lykkeBalanceService.GetFromServerAsync();
 
-        private async Task TransferAsync()
-        {
-            try
+            bool exist = true;
+            while (exist)
             {
-                await _lykkeBalanceService.GetFromServerAsync();
-
-                bool exist = true;
-                while (exist)
-                {
-                    exist = await _transferToMerchantQueue.ProcessTransferAsync(TransferAsync);
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex);
+                exist = await _transferToMerchantQueue.ProcessTransferAsync(TransferAsync);
             }
         }
 
@@ -75,7 +59,11 @@ namespace Lykke.Service.PaySettlement.Services
                 {
                     _log.Error(null, $"There is not enought balance of {message.AssetId}. " +
                                      $"Required volume is {message.Amount}. Balance is {balance}.",
-                        new { message.PaymentRequestId });
+                        new
+                        {
+                            message.MerchantId,
+                            message.PaymentRequestId
+                        });
                     return false;
                 }
 
@@ -84,7 +72,7 @@ namespace Lykke.Service.PaySettlement.Services
                 var request = new
                 {
                     destClientId = message.MerchantClientId,
-                    sourceClientId = _settings.ClientId,
+                    sourceClientId = _clientId,
                     amount = message.Amount.TruncateDecimalPlaces(asset.Accuracy),
                     assetId = message.AssetId
                 };
@@ -95,7 +83,11 @@ namespace Lykke.Service.PaySettlement.Services
                 if (result.Code != (int)MeStatusCodes.Ok)
                 {
                     _log.Error(null, $"Can not transfer to merchant:\r\n{request.ToJson()}\r\n" +
-                                     $"Response: {result.ToJson()}", new {message.PaymentRequestId});
+                                     $"Response: {result.ToJson()}", new
+                    {
+                        message.MerchantId,
+                        message.PaymentRequestId
+                    });
                     return false;
                 }
 
@@ -107,19 +99,14 @@ namespace Lykke.Service.PaySettlement.Services
             }
             catch (Exception ex)
             {
-                _log.Error(ex);                
+                _log.Error(ex, "Transfer to merchant is failed.",
+                    new
+                    {
+                        message.MerchantId,
+                        message.PaymentRequestId
+                    });
             }
             return false;
-        }
-
-        public void Dispose()
-        {
-            _timer?.Dispose();
-        }
-
-        public void Stop()
-        {
-            _timer?.Stop();
         }
     }
 }

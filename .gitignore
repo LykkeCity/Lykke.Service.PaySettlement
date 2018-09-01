@@ -63,3 +63,4 @@ node_modules
 
 #Custom
 client/Lykke.Service.PaySettlement.Client/Lykke.Service.PaySettlement.Client.xml
+src/Lykke.Service.PaySettlement/PaySettlement.json
