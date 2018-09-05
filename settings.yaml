@@ -1,10 +1,10 @@
 PaySettlementService: 
     Db:
         LogsConnString:
-            settings-key: PaySettlementService-LogsConnString
+            settings-key: LykkePayLogsConnString
             types: [ AzureTableStorage, Tag ]
         DataConnString: 
-            settings-key: PaySettlementService-DataConnString
+            settings-key: LykkePayLogsConnString
             types: [ AzureTableStorage, Tag ]
         PaymentRequestsTableName: PaymentRequests
         TradeOrdersTableName: TradeOrders
@@ -12,7 +12,7 @@ PaySettlementService:
         TransferToMerchantQueue: TransferToMerchant
     PaymentRequestsSubscriber:
         ConnectionString: 
-            settings-key: GeneralRabbitMqConnectionString
+            settings-key: RabbitPay
             types: [ RabbitMq, Tag ]
         ExchangeName: 
             settings-key: PaySettlementService-PaymentRequestsSubscriber-ExchangeName
@@ -22,7 +22,7 @@ PaySettlementService:
             types: [ Tag ]
     SettlementStatusPublisher:
         ConnectionString: 
-            settings-key: GeneralRabbitMqConnectionString
+            settings-key: RabbitPay
             types: [ RabbitMq, Tag ]
         ExchangeName: 
             settings-key: PaySettlementService-SettlementStatusPublisher-ExchangeName
@@ -71,6 +71,7 @@ AssetsServiceClient:
         types: [ Tag ]
     ExpirationPeriod:
         settings-key: AssetsServiceExpirationPeriod
+        types: [ Tag ]
         
 BalancesServiceClient:
     ServiceUrl:
@@ -109,6 +110,7 @@ ExchangeOperationsServiceClient:
 MonitoringServiceClient:
     MonitoringServiceUrl:
         settings-key: MonitoringServiceUrl
+        types: [ Tag ]
         
 SlackNotifications:
     AzureQueue:
