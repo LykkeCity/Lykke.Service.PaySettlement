@@ -4,12 +4,12 @@ PaySettlementService:
             settings-key: LykkePayLogsConnString
             types: [ AzureTableStorage, Tag ]
         DataConnString: 
-            settings-key: LykkePayLogsConnString
+            settings-key: LykkePayDataConnString
             types: [ AzureTableStorage, Tag ]
-        PaymentRequestsTableName: PaymentRequests
-        TradeOrdersTableName: TradeOrders
-        TransferToMarketQueue: TransferToMarket
-        TransferToMerchantQueue: TransferToMerchant
+        PaymentRequestsTableName: PaySettlementPaymentRequests
+        TradeOrdersTableName: PaySettlementTradeOrders
+        TransferToMarketQueue: PaySettlementTransferToMarket
+        TransferToMerchantQueue: PaySettlementTransferToMerchant
     PaymentRequestsSubscriber:
         ConnectionString: 
             settings-key: RabbitPay
