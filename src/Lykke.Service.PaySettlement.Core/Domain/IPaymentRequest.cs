@@ -3,11 +3,9 @@ using System;
 
 namespace Lykke.Service.PaySettlement.Core.Domain
 {
-    public interface IPaymentRequest
+    public interface IPaymentRequest : IPaymentRequestIdentifier
     {
-        string Id { get; }
         string OrderId { get; }
-        string MerchantId { get; }
         decimal Amount { get; }
         string SettlementAssetId { get; }
         string PaymentAssetId { get; }
@@ -23,7 +21,7 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         string TransferToMarketTransactionHash { get; set; }
         decimal TransferToMarketTransactionFee { get; set; }
         SettlementStatus SettlementStatus { get; set; }
-        decimal MarketAmount { get; set; }
+        decimal ExchangeAmount { get; set; }
         decimal MarketPrice { get; set; }        
         string MarketOrderId { get; set; }
         decimal TransferredAmount { get; set; }

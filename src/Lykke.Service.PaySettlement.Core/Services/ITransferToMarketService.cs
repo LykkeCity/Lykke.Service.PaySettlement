@@ -5,6 +5,7 @@ namespace Lykke.Service.PaySettlement.Core.Services
 {
     public interface ITransferToMarketService
     {
-        Task AddToQueueIfSettlementAsync(IPaymentRequest paymentRequest);
+        Task AddToQueueAsync(IPaymentRequest paymentRequest);
+        Task<TransferBatchPaymentRequestsResult> TransferBatchPaymentRequestsAsync();
     }
 }

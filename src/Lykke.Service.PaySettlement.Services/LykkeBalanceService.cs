@@ -6,11 +6,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Common;
 using Lykke.Service.PaySettlement.Core.Services;
 
 namespace Lykke.Service.PaySettlement.Services
 {
-    public class LykkeBalanceService : ILykkeBalanceService
+    public class LykkeBalanceService : TimerPeriod, ILykkeBalanceService
     {
         private readonly IBalancesClient _balancesClient;
         private readonly string _clientId;
@@ -18,12 +19,18 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly ILog _log;
         private volatile bool _receivedFromServer = false;
 
-        public LykkeBalanceService(IBalancesClient balancesClient, string clientId, ILogFactory logFactory)
+        public LykkeBalanceService(IBalancesClient balancesClient, string clientId,
+            TimeSpan interval, ILogFactory logFactory) : base(interval, logFactory)
         {
             _balancesClient = balancesClient;
             _log = logFactory.CreateLog(this);
             _clientId = clientId;
             _balances = new ConcurrentDictionary<string, decimal>();
+        }
+
+        public override Task Execute()
+        {
+            return GetFromServerAsync();
         }
 
         public async Task GetFromServerAsync()
@@ -41,7 +48,7 @@ namespace Lykke.Service.PaySettlement.Services
             {
                 _balances.AddOrUpdate(model.AssetId,
                     model.Balance,
-                    (k, v) => model.Balance);
+                    (k, v) => v + model.Balance);
             }
 
             _receivedFromServer = true;

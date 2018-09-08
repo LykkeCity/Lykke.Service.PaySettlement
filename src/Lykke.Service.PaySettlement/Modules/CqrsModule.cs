@@ -10,12 +10,20 @@ using Lykke.Service.PaySettlement.Cqrs;
 using Lykke.Service.PaySettlement.Settings;
 using Lykke.SettingsReader;
 using System.Collections.Generic;
+using Lykke.Service.PaySettlement.Contracts.Commands;
+using Lykke.Service.PaySettlement.Contracts.Events;
+using Lykke.Service.PaySettlement.Cqrs.CommandHandlers;
+using Lykke.Service.PaySettlement.Cqrs.Processes;
+using Lykke.Service.PaySettlement.Rabbit;
 
 namespace Lykke.Service.PaySettlement.Modules
 {
     internal class CqrsModule : Module
     {
         private readonly IReloadingManager<AppSettings> _appSettings;
+        private const string CommandsRoute = "commands";
+        private const string EventsRoute = "events";
+        public const string SettlementBoundedContext = "lykkepay-settlement";
 
         public CqrsModule(IReloadingManager<AppSettings> appSettings)
         {
@@ -31,14 +39,12 @@ namespace Lykke.Service.PaySettlement.Modules
 
             builder.Register(context => new AutofacDependencyResolver(context)).As<IDependencyResolver>().SingleInstance();
 
+            RegisterComponents(builder);
+
             var rabbitMqSettings = new RabbitMQ.Client.ConnectionFactory
             {
                 Uri = _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber.ConnectionString
             };
-
-            builder.RegisterType<ConfirmationsSaga>()
-                .WithParameter("multisigWalletAddress", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService.MultisigWalletAddress)
-                .WithParameter("isMainNet", _appSettings.CurrentValue.PaySettlementService.IsMainNet);
 
             builder.Register(ctx =>
             {
@@ -63,12 +69,84 @@ namespace Lykke.Service.PaySettlement.Modules
                         SerializationFormat.ProtoBuf,
                         environment: _appSettings.CurrentValue.PaySettlementService.CqrsEnvironment)),
 
-                    Register.Saga<ConfirmationsSaga>("paysettlement-transactions-saga")
+                    Register.BoundedContext(SettlementBoundedContext)
+                        .PublishingEvents(typeof(PaymentRequestDetailsEvent))
+                        .With(EventsRoute)
+                        .WithProcess<PaymentRequestsSubscriber>()
+
+                        .ListeningCommands(typeof(CreateSettlementCommand))
+                        .On(CommandsRoute)
+                        .PublishingEvents(typeof(SettlementCreatedEvent), typeof(SettlementErrorEvent))
+                        .With(EventsRoute)
+                        .WithCommandsHandler<CreateSettlementCommandHandler>()
+
+                        .ListeningCommands(typeof(TransferToMarketCommand))
+                        .On(CommandsRoute)
+                        .PublishingEvents(typeof(SettlementTransferToMarketQueuedEvent), typeof(SettlementErrorEvent))
+                        .With(EventsRoute)
+                        .WithCommandsHandler<TransferToMarketCommandHandler>()
+
+                        .PublishingEvents(typeof(SettlementTransferringToMarketEvent), typeof(SettlementErrorEvent))
+                        .With(EventsRoute)
+                        .WithProcess<TransferToMarketProcess>()
+
+                        .ListeningCommands(typeof(ExchangeCommand))
+                        .On(CommandsRoute)
+                        .PublishingEvents(typeof(SettlementExchangeQueuedEvent), typeof(SettlementErrorEvent))
+                        .With(EventsRoute)
+                        .WithCommandsHandler<ExchangeCommandHandler>()
+
+                        .PublishingEvents(typeof(SettlementExchangedEvent), typeof(SettlementErrorEvent))
+                        .With(EventsRoute)
+                        .WithProcess<ExchangeProcess>()
+
+                        .ListeningCommands(typeof(TransferToMerchantCommand))
+                        .On(CommandsRoute)
+                        .WithCommandsHandler<TransferToMerchantCommandHandler>(),
+
+                    Register.Saga<SettlementSaga>("lykkepay-settlement-saga")
+                        .PublishingCommands(typeof(CreateSettlementCommand),
+                            typeof(TransferToMarketCommand), 
+                            typeof(ExchangeCommand), 
+                            typeof(TransferToMerchantCommand))
+                        .To(SettlementBoundedContext).With(CommandsRoute)
+
+                        .ListeningEvents(typeof(PaymentRequestDetailsEvent),
+                            typeof(SettlementCreatedEvent),
+                            typeof(SettlementExchangedEvent))
+                        .From(SettlementBoundedContext).On(EventsRoute)
+
                         .ListeningEvents(typeof(ConfirmationSavedEvent))
                         .From("transactions").On("transactions-events")
+                        .WithEndpointResolver(new RabbitMqConventionEndpointResolver(
+                            "RabbitMq",
+                            SerializationFormat.ProtoBuf,
+                            environment: _appSettings.CurrentValue.PaySettlementService.CqrsTxTransactions.Environment))
                 );
             })
             .As<ICqrsEngine>().SingleInstance().AutoActivate();
+        }
+
+        private void RegisterComponents(ContainerBuilder builder)
+        {
+            builder.RegisterType<ErrorProcessHelper>()
+                .As<IErrorProcessHelper>();
+
+            builder.RegisterType<PaymentRequestsSubscriber>()
+                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber);
+
+            builder.RegisterType<CreateSettlementCommandHandler>();
+            builder.RegisterType<TransferToMarketCommandHandler>();
+            builder.RegisterType<TransferToMarketProcess>()
+                .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.TransferToMarketInterval);
+            builder.RegisterType<ExchangeCommandHandler>();
+            builder.RegisterType<ExchangeProcess>()
+                .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.ExchangeInterval);
+            builder.RegisterType<TransferToMerchantCommandHandler>();
+            
+            builder.RegisterType<SettlementSaga>()
+                .WithParameter("multisigWalletAddress", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService.MultisigWalletAddress)
+                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.CqrsTxTransactions);
         }
     }
 }

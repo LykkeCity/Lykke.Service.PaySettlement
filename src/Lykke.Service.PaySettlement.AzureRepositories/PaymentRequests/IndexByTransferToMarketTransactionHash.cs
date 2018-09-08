@@ -28,7 +28,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         internal static AzureIndex Create(PaymentRequestEntity entity)
         {
             return AzureIndex.Create(GeneratePartitionKey(entity.TransferToMarketTransactionHash),
-                GenerateRowKey(entity.Id), entity);
+                GenerateRowKey(entity.PaymentRequestId), entity);
         }
 
         internal static AzureIndex Create(string merchantId, string id, 

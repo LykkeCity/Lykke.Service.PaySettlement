@@ -15,7 +15,5 @@ namespace Lykke.Service.PaySettlement.Settings
         public string TradeOrdersTableName { get; set; }
 
         public string TransferToMarketQueue { get; set; }
-
-        public string TransferToMerchantQueue { get; set; }
     }
 }

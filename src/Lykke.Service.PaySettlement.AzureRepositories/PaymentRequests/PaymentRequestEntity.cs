@@ -14,7 +14,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
     [ValueTypeMergingStrategy(ValueTypeMergingStrategy.UpdateIfDirty)]
     public class PaymentRequestEntity : AzureTableEntity, IPaymentRequest
     {
-        public string Id { get; set; }
+        public string PaymentRequestId { get; set; }
 
         public string OrderId { get; set; }
 
@@ -132,14 +132,14 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             }
         }
 
-        private decimal _marketAmount;
-        public decimal MarketAmount
+        private decimal _exchangeAmount;
+        public decimal ExchangeAmount
         {
-            get => _marketAmount;
+            get => _exchangeAmount;
             set
             {
-                _marketAmount = value;
-                MarkValueTypePropertyAsDirty(nameof(MarketAmount));
+                _exchangeAmount = value;
+                MarkValueTypePropertyAsDirty(nameof(ExchangeAmount));
             }
         }
 
@@ -188,8 +188,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         public PaymentRequestEntity(IPaymentRequest paymentRequest)
         {
             PartitionKey = GetPartitionKey(paymentRequest.MerchantId);
-            RowKey = GetRowKey(paymentRequest.Id);
-            Id = paymentRequest.Id;
+            RowKey = GetRowKey(paymentRequest.PaymentRequestId);
+            PaymentRequestId = paymentRequest.PaymentRequestId;
             OrderId = paymentRequest.OrderId;
             MerchantId = paymentRequest.MerchantId;
             Amount = paymentRequest.Amount;
@@ -207,7 +207,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             TransferToMarketTransactionHash = paymentRequest.TransferToMarketTransactionHash;
             TransferToMarketTransactionFee = paymentRequest.TransferToMarketTransactionFee;
             SettlementStatus = paymentRequest.SettlementStatus;
-            MarketAmount = paymentRequest.MarketAmount;
+            ExchangeAmount = paymentRequest.ExchangeAmount;
             MarketPrice = paymentRequest.MarketPrice;
             MarketOrderId = paymentRequest.MarketOrderId;
             TransferredAmount = paymentRequest.TransferredAmount;

@@ -9,7 +9,6 @@ PaySettlementService:
         PaymentRequestsTableName: PaySettlementPaymentRequests
         TradeOrdersTableName: PaySettlementTradeOrders
         TransferToMarketQueue: PaySettlementTransferToMarket
-        TransferToMerchantQueue: PaySettlementTransferToMerchant
     PaymentRequestsSubscriber:
         ConnectionString: 
             settings-key: RabbitPay
@@ -20,21 +19,7 @@ PaySettlementService:
         QueueName: 
             settings-key: PaySettlementService-PaymentRequestsSubscriber-QueueName
             types: [ Tag ]
-    SettlementStatusPublisher:
-        ConnectionString: 
-            settings-key: RabbitPay
-            types: [ RabbitMq, Tag ]
-        ExchangeName: 
-            settings-key: PaySettlementService-SettlementStatusPublisher-ExchangeName
-            types: [ Tag ]
-    TradeService:
-        Interval:
-            settings-key: PaySettlementService-TradeService-Interval
-            types: [ Tag ]
     TransferToMarketService:
-        Interval:
-            settings-key: PaySettlementService-TransferToMarketService-Interval
-            types: [ Tag ]
         MaxTransfersPerTransaction: 
             settings-key: PaySettlementService-TransferToMarketService-MaxTransfersPerTransaction
             types: [ Tag ]
@@ -51,18 +36,27 @@ PaySettlementService:
         SettlementAssetIds:
             settings-key: PaySettlementService-AssetService-SettlementAssetIds
             types: [ JsonArray, Tag ]    
-    TransferToMerchantService:
-        Interval:
-            settings-key: PaySettlementService-TransferToMerchantService-Interval
+    CqrsTxTransactions:
+        Environment:
+            settings-key: PaySettlementService-CqrsTxTransactions-Environment
             types: [ Tag ]
-    ClientId: 
-        settings-key: PaySettlementService-ClientId
-        types: [ Tag ]            
+        IsMainNet:
+            settings-key: PaySettlementService-CqrsTxTransactions-IsMainNet
+            types: [ Tag ]
     CqrsEnvironment:
         settings-key: PaySettlementService-CqrsEnvironment
         types: [ Tag ]
-    IsMainNet:
-        settings-key: PaySettlementService-IsMainNet
+    ClientId: 
+        settings-key: PaySettlementService-ClientId
+        types: [ Tag ]
+    LykkeBalanceUpdateInterval:
+        settings-key: PaySettlementService-LykkeBalanceUpdateInterval
+        types: [ Tag ]
+    TransferToMarketInterval:
+        settings-key: PaySettlementService-TransferToMarketInterval
+        types: [ Tag ]
+    ExchangeInterval:
+        settings-key: PaySettlementService-ExchangeInterval
         types: [ Tag ]
         
 AssetsServiceClient:  

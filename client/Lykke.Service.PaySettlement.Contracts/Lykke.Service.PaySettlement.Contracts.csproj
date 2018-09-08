@@ -16,9 +16,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\src\Lykke.Service.PaySettlement.Core\Domain\ISettlementStatusChangedEvent.cs" Link="ISettlementStatusChangedEvent.cs" />
-    <Compile Include="..\..\src\Lykke.Service.PaySettlement.Core\Domain\SettlementStatus.cs" Link="SettlementStatus.cs" />
-    <Compile Include="..\..\src\Lykke.Service.PaySettlement.Core\Domain\SettlementStatusChangedEvent.cs" Link="SettlementStatusChangedEvent.cs" />
+    <PackageReference Include="Lykke.Service.PayInternal.Contract" Version="2.0.3" />
+    <PackageReference Include="protobuf-net" Version="2.4.0" />
   </ItemGroup>
 
 </Project>

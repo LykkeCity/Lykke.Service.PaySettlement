@@ -1,0 +1,71 @@
+﻿using Common.Log;
+using JetBrains.Annotations;
+using Lykke.Common.Log;
+using Lykke.Cqrs;
+using Lykke.Service.PaySettlement.Contracts.Commands;
+using Lykke.Service.PaySettlement.Contracts.Events;
+using Lykke.Service.PaySettlement.Core.Domain;
+using Lykke.Service.PaySettlement.Core.Services;
+using System;
+using System.Threading.Tasks;
+
+namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
+{
+    [UsedImplicitly]
+    public class TransferToMerchantCommandHandler
+    {
+        private readonly IPaymentRequestService _paymentRequestService;
+        private readonly ITransferToMerchantLykkeWalletService _transferToMerchantLykkeWalletService;
+        private readonly IErrorProcessHelper _errorProcessHelper;
+        private readonly ILog _log;
+
+        public TransferToMerchantCommandHandler(IPaymentRequestService paymentRequestService,
+            ITransferToMerchantLykkeWalletService transferToMerchantLykkeWalletService,
+            IErrorProcessHelper errorProcessHelper, ILogFactory logFactory)
+        {
+            _paymentRequestService = paymentRequestService;
+            _transferToMerchantLykkeWalletService = transferToMerchantLykkeWalletService;
+            _errorProcessHelper = errorProcessHelper;
+            _log = logFactory.CreateLog(this);
+        }
+
+        [UsedImplicitly]
+        public async Task Handle(TransferToMerchantCommand command, IEventPublisher publisher)
+        {
+            try
+            {
+                IPaymentRequest paymentRequest =
+                    await _paymentRequestService.GetAsync(command.MerchantId, command.PaymentRequestId);
+
+                TransferToMerchantResult transferToMerchantResult =
+                    await _transferToMerchantLykkeWalletService.TransferAsync(paymentRequest);
+
+                if (transferToMerchantResult.IsSuccess)
+                {
+                    await _paymentRequestService.SetTransferredToMerchantAsync(command.MerchantId,
+                        command.PaymentRequestId, transferToMerchantResult.Amount);
+
+                    publisher.PublishEvent(new SettlementTransferredToMerchantEvent
+                    {
+                        PaymentRequestId = paymentRequest.PaymentRequestId,
+                        MerchantId = paymentRequest.MerchantId,
+                        TransferredAmount = transferToMerchantResult.Amount,
+                        TransferredAssetId = transferToMerchantResult.AssetId
+                    });
+                }
+                else
+                {
+                    await _errorProcessHelper.ProcessErrorAsync(command, publisher, true,
+                        transferToMerchantResult.ErrorMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _errorProcessHelper.ProcessErrorAsync(command, publisher, true,
+                    "Unknown error has occured on transferring to merchant Lykke wallet.", ex);
+
+                throw;
+            }
+        }
+    }
+}

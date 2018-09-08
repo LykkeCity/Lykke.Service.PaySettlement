@@ -30,6 +30,7 @@
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.1.1" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\client\Lykke.Service.PaySettlement.Contracts\Lykke.Service.PaySettlement.Contracts.csproj" />
     <ProjectReference Include="..\Lykke.Service.PaySettlement.AzureRepositories\Lykke.Service.PaySettlement.AzureRepositories.csproj" />
     <ProjectReference Include="..\Lykke.Service.PaySettlement.Core\Lykke.Service.PaySettlement.Core.csproj" />
     <ProjectReference Include="..\Lykke.Service.PaySettlement.Services\Lykke.Service.PaySettlement.Services.csproj" />

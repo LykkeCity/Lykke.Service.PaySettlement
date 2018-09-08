@@ -1,5 +1,4 @@
-﻿using System;
-using Autofac;
+﻿using Autofac;
 using AutoMapper;
 using AzureStorage.Queue;
 using AzureStorage.Tables;
@@ -7,22 +6,21 @@ using AzureStorage.Tables.Templates.Index;
 using Common;
 using Lykke.Common.Log;
 using Lykke.Service.Assets.Client;
+using Lykke.Service.Balances.Client;
+using Lykke.Service.ExchangeOperations.Client;
+using Lykke.Service.PayInternal.Client;
+using Lykke.Service.PayMerchant.Client;
 using Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests;
 using Lykke.Service.PaySettlement.AzureRepositories.Trading;
 using Lykke.Service.PaySettlement.AzureRepositories.TransferToMarket;
-using Lykke.Service.PaySettlement.AzureRepositories.TransferToMerchant;
-using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
 using Lykke.Service.PaySettlement.Services;
 using Lykke.Service.PaySettlement.Settings;
 using Lykke.SettingsReader;
 using QBitNinja.Client;
+using System;
 using System.Net;
-using Lykke.Service.PaySettlement.Rabbit;
-using Lykke.Service.Balances.Client;
-using Lykke.Service.ExchangeOperations.Client;
-using Lykke.Service.PayInternal.Client;
-using Lykke.Service.PayMerchant.Client;
+using Lykke.Service.PaySettlement.Core.Repositories;
 
 namespace Lykke.Service.PaySettlement.Modules
 {
@@ -67,52 +65,28 @@ namespace Lykke.Service.PaySettlement.Modules
                 .SingleInstance()
                 .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.AssetService);
 
-            builder.RegisterType<StatusService>()
-                .As<IStatusService>()
-                .SingleInstance();
+            builder.RegisterType<LykkeBalanceService>()
+                .As<ILykkeBalanceService>()
+                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId)
+                .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.LykkeBalanceUpdateInterval);
 
-            builder.RegisterType<TradeService>()
-                .As<ITradeService>()
-                .As<IStartable>()
-                .As<IStopable>()
-                .AutoActivate()
-                .SingleInstance()
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TradeService)
-                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);
+            builder.RegisterType<PaymentRequestService>()
+                .As<IPaymentRequestService>()
+                .SingleInstance();
 
             builder.RegisterType<TransferToMarketService>()
                 .As<ITransferToMarketService>()
-                .As<IStartable>()
-                .As<IStopable>()
-                .AutoActivate()
                 .SingleInstance()
                 .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService);
 
-            builder.RegisterType<TransferToMerchantService>()
-                .As<IStartable>()
-                .As<IStopable>()
-                .AutoActivate()
+            builder.RegisterType<ExchangeService>()
+                .As<IExchangeService>()
                 .SingleInstance()
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.TransferToMerchantService)
-                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);
+                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);            
 
-            builder.RegisterType<PaymentRequestsSubscriber>()
-                .As<IStartable>()
-                .As<IStopable>()
-                .AutoActivate()
+            builder.RegisterType<TransferToMerchantLykkeWalletService>()
+                .As<ITransferToMerchantLykkeWalletService>()
                 .SingleInstance()
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber);
-
-            builder.RegisterType<SettlementStatusPublisher>()
-                .As<ISettlementStatusPublisher>()
-                .As<IStartable>()
-                .As<IStopable>()
-                .AutoActivate()
-                .SingleInstance()
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.SettlementStatusPublisher);
-
-            builder.RegisterType<LykkeBalanceService>()
-                .As<ILykkeBalanceService>()
                 .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);
 
             builder.RegisterBalancesClient(_appSettings.CurrentValue.BalancesServiceClient);
@@ -149,17 +123,13 @@ namespace Lykke.Service.PaySettlement.Modules
                         AzureTableStorage<AzureIndex>.Create(
                             _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
                             _appSettings.CurrentValue.PaySettlementService.Db.PaymentRequestsTableName,
-                            c.Resolve<ILogFactory>()),
-                        AzureTableStorage<AzureIndex>.Create(
-                            _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
-                            _appSettings.CurrentValue.PaySettlementService.Db.PaymentRequestsTableName,
                             c.Resolve<ILogFactory>())))
                 .As<IPaymentRequestsRepository>()
                 .SingleInstance();
 
             builder.Register(c =>
                     new TradeOrdersRepository(
-                        AzureTableStorage<TradeOrderEntity>.Create(
+                        AzureTableStorage<ExchangeOrderEntity>.Create(
                             _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
                             _appSettings.CurrentValue.PaySettlementService.Db.TradeOrdersTableName,
                             c.Resolve<ILogFactory>())))
@@ -172,14 +142,6 @@ namespace Lykke.Service.PaySettlement.Modules
                             _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
                             _appSettings.CurrentValue.PaySettlementService.Db.TransferToMarketQueue)))
                 .As<ITransferToMarketQueue>()
-                .SingleInstance();
-
-            builder.Register(c =>
-                    new TransferToMerchantQueue(
-                        AzureQueueExt.Create(
-                            _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
-                            _appSettings.CurrentValue.PaySettlementService.Db.TransferToMerchantQueue)))
-                .As<ITransferToMerchantQueue>()
                 .SingleInstance();
         }
     }

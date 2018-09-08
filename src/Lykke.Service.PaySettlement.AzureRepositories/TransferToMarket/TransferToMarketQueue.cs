@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage.Queue;
 using System.Collections.Generic;
 using System.Linq;
+using Lykke.Service.PaySettlement.Core.Repositories;
 
 namespace Lykke.Service.PaySettlement.AzureRepositories.TransferToMarket
 {
@@ -23,8 +24,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.TransferToMarket
             await _queue.PutRawMessageAsync(new TransferToMarketMessage(paymentRequest).ToJson());
         }
 
-        public async Task<int> ProcessTransferAsync(Func<TransferToMarketMessage[], Task<bool>> processor,
-            int maxCount = int.MaxValue)
+        public async Task<T> ProcessTransferAsync<T>(Func<TransferToMarketMessage[], Task<T>> processor,
+            int maxCount = int.MaxValue) where T : IMessageProcessorResult
         {
             var list = new List<Tuple<TransferToMarketMessage, CloudQueueMessage>>();
             CloudQueueMessage rawMessage;
@@ -38,19 +39,17 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.TransferToMarket
                 }
             } while (rawMessage != null && list.Count < maxCount);
 
-           bool result = await processor(list.Select(p=>p.Item1).ToArray());
+            T result = await processor(list.Select(p=>p.Item1).ToArray());
 
-            if (!result)
+            if (result.IsSuccess)
             {
-                return 0;
+                foreach (var message in list)
+                {
+                    await _queue.FinishRawMessageAsync(message.Item2);
+                }
             }
 
-            foreach (var message in list)
-            {
-                await _queue.FinishRawMessageAsync(message.Item2);
-            }
-
-            return list.Count;
+            return result;
         }
     }
 }

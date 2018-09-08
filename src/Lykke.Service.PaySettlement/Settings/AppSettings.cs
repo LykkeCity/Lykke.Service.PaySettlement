@@ -12,12 +12,12 @@ namespace Lykke.Service.PaySettlement.Settings
     {
         public PaySettlementSettings PaySettlementService { get; set; }
 
-        public PayInternalServiceClientSettings PayInternalServiceClient { get; set; }
-        public PayMerchantServiceClientSettings PayMerchantServiceClient { get; set; }
         public AssetsServiceSettings AssetsServiceClient { get; set; }
+        public BalancesServiceClientSettings BalancesServiceClient { get; set; }
         public MatchingEngineSettings MatchingEngineClient { get; set; }
         public NinjaServiceClientSettings NinjaServiceClient { get; set; }
-        public BalancesServiceClientSettings BalancesServiceClient { get; set; }
-        public ExchangeOperationsServiceClientSettings ExchangeOperationsServiceClient { get; set; }
+        public PayInternalServiceClientSettings PayInternalServiceClient { get; set; }
+        public PayMerchantServiceClientSettings PayMerchantServiceClient { get; set; }
+        public ExchangeOperationsServiceClientSettings ExchangeOperationsServiceClient { get; set; }        
     }
 }
