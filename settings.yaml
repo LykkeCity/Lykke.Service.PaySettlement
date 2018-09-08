@@ -1,0 +1,122 @@
+PaySettlementService: 
+    Db:
+        LogsConnString:
+            settings-key: LykkePayLogsConnString
+            types: [ AzureTableStorage, Tag ]
+        DataConnString: 
+            settings-key: LykkePayDataConnString
+            types: [ AzureTableStorage, Tag ]
+        PaymentRequestsTableName: PaySettlementPaymentRequests
+        TradeOrdersTableName: PaySettlementTradeOrders
+        TransferToMarketQueue: PaySettlementTransferToMarket
+        TransferToMerchantQueue: PaySettlementTransferToMerchant
+    PaymentRequestsSubscriber:
+        ConnectionString: 
+            settings-key: RabbitPay
+            types: [ RabbitMq, Tag ]
+        ExchangeName: 
+            settings-key: PaySettlementService-PaymentRequestsSubscriber-ExchangeName
+            types: [ Tag ]
+        QueueName: 
+            settings-key: PaySettlementService-PaymentRequestsSubscriber-QueueName
+            types: [ Tag ]
+    SettlementStatusPublisher:
+        ConnectionString: 
+            settings-key: RabbitPay
+            types: [ RabbitMq, Tag ]
+        ExchangeName: 
+            settings-key: PaySettlementService-SettlementStatusPublisher-ExchangeName
+            types: [ Tag ]
+    TradeService:
+        Interval:
+            settings-key: PaySettlementService-TradeService-Interval
+            types: [ Tag ]
+    TransferToMarketService:
+        Interval:
+            settings-key: PaySettlementService-TransferToMarketService-Interval
+            types: [ Tag ]
+        MaxTransfersPerTransaction: 
+            settings-key: PaySettlementService-TransferToMarketService-MaxTransfersPerTransaction
+            types: [ Tag ]
+        MultisigWalletAddress:
+            settings-key: PaySettlementService-TransferToMarketService-MultisigWalletAddress
+            types: [ Tag ]
+    AssetService:
+        ExpirationPeriod:
+            settings-key: PaySettlementService-AssetService-ExpirationPeriod
+            types: [ Tag ]
+        PaymentAssetId: 
+            settings-key: PaySettlementService-AssetService-PaymentAssetId
+            types: [ Tag ]
+        SettlementAssetIds:
+            settings-key: PaySettlementService-AssetService-SettlementAssetIds
+            types: [ JsonArray, Tag ]    
+    TransferToMerchantService:
+        Interval:
+            settings-key: PaySettlementService-TransferToMerchantService-Interval
+            types: [ Tag ]
+    ClientId: 
+        settings-key: PaySettlementService-ClientId
+        types: [ Tag ]            
+    CqrsEnvironment:
+        settings-key: PaySettlementService-CqrsEnvironment
+        types: [ Tag ]
+    IsMainNet:
+        settings-key: PaySettlementService-IsMainNet
+        types: [ Tag ]
+        
+AssetsServiceClient:  
+    ServiceUrl:
+        settings-key: AssetsServiceUrl
+        types: [ Tag ]
+    ExpirationPeriod:
+        settings-key: AssetsServiceExpirationPeriod
+        types: [ Tag ]
+        
+BalancesServiceClient:
+    ServiceUrl:
+        settings-key: BalancesServiceUrl
+        types: [ Tag ]
+        
+MatchingEngineClient:
+    IpEndpoint: 
+        Port: 
+            settings-key: MatchingEngine-Port
+            types: [ Tag ]
+        Host:
+            settings-key: MatchingEngine-Host
+            types: [ Tag ]
+            
+NinjaServiceClient: 
+    ServiceUrl: 
+        settings-key: NinjaServiceUrl
+        types: [ Tag ]
+        
+PayInternalServiceClient: 
+    ServiceUrl: 
+        settings-key: PayInternalServiceUrl
+        types: [ Tag ]
+        
+PayMerchantServiceClient:
+    ServiceUrl:
+        settings-key: PayMerchantServiceUrl
+        types: [Tag]
+        
+ExchangeOperationsServiceClient:
+    ServiceUrl:
+        settings-key: ExchangeOperationsServiceUrl    
+        types: [ Tag ]
+        
+MonitoringServiceClient:
+    MonitoringServiceUrl:
+        settings-key: MonitoringServiceUrl
+        types: [ Tag ]
+        
+SlackNotifications:
+    AzureQueue:
+        ConnectionString:
+            settings-key: SlackNotificationsConnString
+            types: [ AzureTableStorage ]
+        QueueName:
+            settings-key: SlackQueueName
+            types: [ AzureTableStorage ]
