@@ -37,6 +37,9 @@ PaySettlementService:
             settings-key: PaySettlementService-AssetService-SettlementAssetIds
             types: [ JsonArray, Tag ]    
     CqrsTxTransactions:
+        ConnectionString: 
+            settings-key: RabbitME
+            types: [ RabbitMq, Tag ]
         Environment:
             settings-key: PaySettlementService-CqrsTxTransactions-Environment
             types: [ Tag ]

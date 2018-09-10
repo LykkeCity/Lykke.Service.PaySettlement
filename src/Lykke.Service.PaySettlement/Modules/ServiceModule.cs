@@ -67,6 +67,10 @@ namespace Lykke.Service.PaySettlement.Modules
 
             builder.RegisterType<LykkeBalanceService>()
                 .As<ILykkeBalanceService>()
+                .As<IStartable>()
+                .As<IStopable>()
+                .AutoActivate()
+                .SingleInstance()
                 .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId)
                 .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.LykkeBalanceUpdateInterval);
 

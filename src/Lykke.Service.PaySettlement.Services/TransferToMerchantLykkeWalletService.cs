@@ -37,12 +37,12 @@ namespace Lykke.Service.PaySettlement.Services
         {
             try
             {
-                if (!IsBalanceEnough(message, out var isBalanceEnoughResult))
+                decimal amount = GetAmount(message);
+                if (!IsBalanceEnough(amount, message, out var isBalanceEnoughResult))
                 {
                     return isBalanceEnoughResult;
                 }
-
-                decimal amount = GetAmount(message);
+                
                 ExchangeOperationResult result = await TransferExAsync(message, amount);
 
                 if (!IsExchangeOperationSuccess(message, result, out var isExchangeOperationSuccessResult))
@@ -81,18 +81,18 @@ namespace Lykke.Service.PaySettlement.Services
             }
         }
 
-        private bool IsBalanceEnough(IPaymentRequest message, out TransferToMerchantResult result)
+        private bool IsBalanceEnough(decimal amount, IPaymentRequest message, out TransferToMerchantResult result)
         {
             result = null;
             decimal balance = _lykkeBalanceService.GetAssetBalance(message.SettlementAssetId);
 
-            if (balance >= message.Amount)
+            if (balance >= amount)
             {
                 return true;
             }
 
             string errorMessage = $"There is not enought balance of {message.SettlementAssetId}. " +
-                                  $"Required volume is {message.Amount}. Balance is {balance}.";
+                                  $"Required volume is {amount}. Balance is {balance}.";
 
             _log.Error(null, errorMessage, new
             {

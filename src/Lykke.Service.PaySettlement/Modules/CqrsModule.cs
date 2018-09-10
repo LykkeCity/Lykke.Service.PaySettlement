@@ -10,6 +10,7 @@ using Lykke.Service.PaySettlement.Cqrs;
 using Lykke.Service.PaySettlement.Settings;
 using Lykke.SettingsReader;
 using System.Collections.Generic;
+using Common;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Cqrs.CommandHandlers;
@@ -41,21 +42,38 @@ namespace Lykke.Service.PaySettlement.Modules
 
             RegisterComponents(builder);
 
-            var rabbitMqSettings = new RabbitMQ.Client.ConnectionFactory
+            const string mainTransport = "RabbitMq";
+            var mainSettings = new RabbitMQ.Client.ConnectionFactory
             {
                 Uri = _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber.ConnectionString
+            };
+
+            const string txTransactionsTransport = "TxTransactionsRabbitMq";
+            var txTransactionsSettings = new RabbitMQ.Client.ConnectionFactory
+            {
+                Uri = _appSettings.CurrentValue.PaySettlementService.CqrsTxTransactions.ConnectionString
             };
 
             builder.Register(ctx =>
             {
                 var logFactory = ctx.Resolve<ILogFactory>();
 
-                var broker = rabbitMqSettings.Endpoint.ToString();
+                var mainBroker = mainSettings.Endpoint.ToString();
+                var txTransactionsBroker = txTransactionsSettings.Endpoint.ToString();
 
                 var messagingEngine = new MessagingEngine(logFactory,
                     new TransportResolver(new Dictionary<string, TransportInfo>
                     {
-                        {"RabbitMq", new TransportInfo(broker, rabbitMqSettings.UserName, rabbitMqSettings.Password, "None", "RabbitMq")}
+                        {
+                            mainTransport,
+                            new TransportInfo(mainBroker, mainSettings.UserName, mainSettings.Password, "None",
+                                "RabbitMq")
+                        },
+                        {
+                            txTransactionsTransport,
+                            new TransportInfo(txTransactionsBroker, txTransactionsSettings.UserName,
+                                txTransactionsSettings.Password, "None", "RabbitMq")
+                        }
                     }),
                     new RabbitMqTransportFactory(logFactory));
 
@@ -65,7 +83,7 @@ namespace Lykke.Service.PaySettlement.Modules
                     new DefaultEndpointProvider(),
                     true,
                     Register.DefaultEndpointResolver(new RabbitMqConventionEndpointResolver(
-                        "RabbitMq",
+                        mainTransport,
                         SerializationFormat.ProtoBuf,
                         environment: _appSettings.CurrentValue.PaySettlementService.CqrsEnvironment)),
 
@@ -102,6 +120,8 @@ namespace Lykke.Service.PaySettlement.Modules
 
                         .ListeningCommands(typeof(TransferToMerchantCommand))
                         .On(CommandsRoute)
+                        .PublishingEvents(typeof(SettlementTransferredToMerchantEvent), typeof(SettlementErrorEvent))
+                        .With(EventsRoute)
                         .WithCommandsHandler<TransferToMerchantCommandHandler>(),
 
                     Register.Saga<SettlementSaga>("lykkepay-settlement-saga")
@@ -119,7 +139,7 @@ namespace Lykke.Service.PaySettlement.Modules
                         .ListeningEvents(typeof(ConfirmationSavedEvent))
                         .From("transactions").On("transactions-events")
                         .WithEndpointResolver(new RabbitMqConventionEndpointResolver(
-                            "RabbitMq",
+                            txTransactionsTransport,
                             SerializationFormat.ProtoBuf,
                             environment: _appSettings.CurrentValue.PaySettlementService.CqrsTxTransactions.Environment))
                 );
@@ -138,10 +158,20 @@ namespace Lykke.Service.PaySettlement.Modules
             builder.RegisterType<CreateSettlementCommandHandler>();
             builder.RegisterType<TransferToMarketCommandHandler>();
             builder.RegisterType<TransferToMarketProcess>()
-                .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.TransferToMarketInterval);
+                .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.TransferToMarketInterval)
+                .AsSelf()
+                .As<IStartable>()
+                .As<IStopable>()
+                .AutoActivate()
+                .SingleInstance();
             builder.RegisterType<ExchangeCommandHandler>();
             builder.RegisterType<ExchangeProcess>()
-                .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.ExchangeInterval);
+                .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.ExchangeInterval)
+                .AsSelf()
+                .As<IStartable>()
+                .As<IStopable>()
+                .AutoActivate()
+                .SingleInstance();
             builder.RegisterType<TransferToMerchantCommandHandler>();
             
             builder.RegisterType<SettlementSaga>()

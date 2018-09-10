@@ -37,6 +37,12 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 IPaymentRequest paymentRequest =
                     await _paymentRequestService.GetAsync(command.MerchantId, command.PaymentRequestId);
 
+                //If the first message is timeouted then possibility of the double transfer exists.
+                if (paymentRequest.SettlementStatus != SettlementStatus.Exchanged)
+                {
+                    return;
+                }
+
                 TransferToMerchantResult transferToMerchantResult =
                     await _transferToMerchantLykkeWalletService.TransferAsync(paymentRequest);
 

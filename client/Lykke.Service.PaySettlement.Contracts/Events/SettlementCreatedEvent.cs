@@ -2,6 +2,7 @@
 
 namespace Lykke.Service.PaySettlement.Contracts.Events
 {
+    [ProtoContract]
     public class SettlementCreatedEvent
     {
         [ProtoMember(1, IsRequired = true)]

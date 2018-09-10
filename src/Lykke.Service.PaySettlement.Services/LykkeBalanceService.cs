@@ -71,7 +71,7 @@ namespace Lykke.Service.PaySettlement.Services
         {
             if (!_receivedFromServer)
             {
-                throw new InvalidOperationException($"Call {nameof(GetFromServerAsync)} before change balance.");
+                throw new InvalidOperationException($"Call {nameof(GetFromServerAsync)} before get balance.");
             }
 
             if (_balances.TryGetValue(assetId, out var balance))

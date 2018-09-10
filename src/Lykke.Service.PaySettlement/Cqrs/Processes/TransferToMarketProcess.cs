@@ -5,12 +5,14 @@ using Lykke.Cqrs;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Processes
 {
+    [UsedImplicitly]
     public class TransferToMarketProcess : TimerPeriod, IProcess
     {
         private readonly ITransferToMarketService _transferToMarketService;
@@ -30,6 +32,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
             _log = logFactory.CreateLog(this);
         }
 
+        [UsedImplicitly]
         public void Start(ICommandSender commandSender, IEventPublisher eventPublisher)
         {
             _eventPublisher = eventPublisher;

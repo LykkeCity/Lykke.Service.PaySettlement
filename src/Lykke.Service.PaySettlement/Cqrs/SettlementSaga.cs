@@ -5,6 +5,7 @@ using NBitcoin;
 using System;
 using System.Threading.Tasks;
 using AutoMapper;
+using JetBrains.Annotations;
 using Lykke.Cqrs;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
@@ -13,6 +14,7 @@ using Lykke.Service.PaySettlement.Settings;
 
 namespace Lykke.Service.PaySettlement.Cqrs
 {
+    [UsedImplicitly]
     public class SettlementSaga
     {
         private readonly INinjaClient _ninjaClient;
@@ -32,12 +34,14 @@ namespace Lykke.Service.PaySettlement.Cqrs
             _log = logFactory.CreateLog(this);
         }
 
+        [UsedImplicitly]
         public void Handle(PaymentRequestDetailsEvent paymentRequestDetailsEvent, ICommandSender commandSender)
         {
             commandSender.SendCommand(_mapper.Map<CreateSettlementCommand>(paymentRequestDetailsEvent),
                 CqrsModule.SettlementBoundedContext);
         }
 
+        [UsedImplicitly]
         public void Handle(SettlementCreatedEvent createdEvent, ICommandSender commandSender)
         {
             if (createdEvent.IsError)
@@ -94,6 +98,7 @@ namespace Lykke.Service.PaySettlement.Cqrs
             }
         }
 
+        [UsedImplicitly]
         public void Handle(SettlementExchangedEvent exchangedEvent, ICommandSender commandSender)
         {
             commandSender.SendCommand(new TransferToMerchantCommand()

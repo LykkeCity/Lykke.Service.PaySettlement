@@ -7,9 +7,11 @@ using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
 using System;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Processes
 {
+    [UsedImplicitly]
     public class ExchangeProcess : TimerPeriod, IProcess
     {
         private readonly IExchangeService _exchangeService;
@@ -28,6 +30,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
             _log = logFactory.CreateLog(this);
         }
 
+        [UsedImplicitly]
         public void Start(ICommandSender commandSender, IEventPublisher eventPublisher)
         {
             _eventPublisher = eventPublisher;
@@ -52,6 +55,11 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
 
         private async Task ProcessExchangeResultAsync(ExchangeResult result)
         {
+            if (result == null)
+            {
+                return;
+            }
+
             if (result.IsSuccess)
             {
                 await _paymentRequestService.SetExchangedAsync(result.MerchantId, 
