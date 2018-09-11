@@ -8,6 +8,7 @@ using Lykke.Service.PaySettlement.Core.Services;
 using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Lykke.Service.PaySettlement.Cqrs.Helpers;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Processes
 {
@@ -50,7 +51,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
 
                 await ProcessExchangeResultAsync(result);
 
-            } while (result != null);
+            } while (result?.IsSuccess == true);
         }
 
         private async Task ProcessExchangeResultAsync(ExchangeResult result)

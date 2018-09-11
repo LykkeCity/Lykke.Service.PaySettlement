@@ -14,7 +14,7 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         int MarkupPips { get; }
         double MarkupFixedFee { get; }
         string WalletAddress { get; }
-        PaymentRequestStatus Status { get; }
+        PaymentRequestStatus PaymentRequestStatus { get; }
         decimal PaidAmount { get; }
         DateTime? PaidDate { get; }
         DateTime PaymentRequestTimestamp { get; }

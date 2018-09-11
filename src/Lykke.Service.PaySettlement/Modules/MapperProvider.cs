@@ -32,7 +32,7 @@ namespace Lykke.Service.PaySettlement.Modules
             mce.CreateMap<PaymentRequestDetailsEvent, CreateSettlementCommand>();
 
             mce.CreateMap<CreateSettlementCommand, PaymentRequest>(MemberList.Destination)
-                .ForMember(d => d.Status, e => e.MapFrom(s=>s.PaymentRequestStatus))
+                .ForMember(d => d.PaymentRequestStatus, e => e.MapFrom(s=>s.PaymentRequestStatus))
                 .ForMember(d => d.TransferToMarketTransactionHash, e => e.Ignore())
                 .ForMember(d => d.TransferToMarketTransactionFee, e => e.Ignore())
                 .ForMember(d => d.ExchangeAmount, e => e.Ignore())

@@ -48,7 +48,6 @@ namespace Lykke.Service.PaySettlement.Services
             {
                 if (!messages.Any())
                 {
-                    _log.Info("There are no payment requests for processing.");
                     return new TransferBatchPaymentRequestsResult {IsSuccess = true};
                 }
 

@@ -83,7 +83,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         public string WalletAddress { get; set; }
 
         [JsonConverter(typeof(StringEnumConverter))]
-        public PaymentRequestStatus Status { get; set; }
+        public PaymentRequestStatus PaymentRequestStatus { get; set; }
 
         private Decimal _paidAmount;
         public Decimal PaidAmount
@@ -200,7 +200,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             MarkupPips = paymentRequest.MarkupPips;
             MarkupFixedFee = paymentRequest.MarkupFixedFee;
             WalletAddress = paymentRequest.WalletAddress;
-            Status = paymentRequest.Status;
+            PaymentRequestStatus = paymentRequest.PaymentRequestStatus;
             PaidAmount = paymentRequest.PaidAmount;
             PaidDate = paymentRequest.PaidDate;
             PaymentRequestTimestamp = paymentRequest.PaymentRequestTimestamp;

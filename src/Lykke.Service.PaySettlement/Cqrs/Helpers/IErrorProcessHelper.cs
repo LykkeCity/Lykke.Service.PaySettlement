@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Lykke.Cqrs;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 
-namespace Lykke.Service.PaySettlement.Cqrs
+namespace Lykke.Service.PaySettlement.Cqrs.Helpers
 {
     public interface IErrorProcessHelper
     {

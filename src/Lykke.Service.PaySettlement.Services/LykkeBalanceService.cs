@@ -52,7 +52,6 @@ namespace Lykke.Service.PaySettlement.Services
             }
 
             _receivedFromServer = true;
-            _log.Info("Lykke balances are updated from the server.");
         }
 
         public void AddAsset(string assetId, decimal value)

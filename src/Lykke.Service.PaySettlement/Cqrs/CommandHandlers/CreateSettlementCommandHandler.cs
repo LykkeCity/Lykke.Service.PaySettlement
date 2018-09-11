@@ -15,6 +15,7 @@ using Lykke.Service.PaySettlement.Models.Exceptions;
 using System;
 using System.Net;
 using System.Threading.Tasks;
+using Lykke.Service.PaySettlement.Cqrs.Helpers;
 
 namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 {

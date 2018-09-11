@@ -1,6 +1,6 @@
 ﻿using ProtoBuf;
 
-namespace Lykke.Service.PaySettlement.Cqrs
+namespace Lykke.Service.PaySettlement.Cqrs.Events
 {
     [ProtoContract]
     public class ConfirmationSavedEvent

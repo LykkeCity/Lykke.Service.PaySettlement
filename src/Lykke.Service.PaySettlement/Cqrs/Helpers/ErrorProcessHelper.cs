@@ -8,7 +8,7 @@ using Lykke.Service.PaySettlement.Models.Exceptions;
 using System;
 using System.Threading.Tasks;
 
-namespace Lykke.Service.PaySettlement.Cqrs
+namespace Lykke.Service.PaySettlement.Cqrs.Helpers
 {
     public class ErrorProcessHelper : IErrorProcessHelper
     {

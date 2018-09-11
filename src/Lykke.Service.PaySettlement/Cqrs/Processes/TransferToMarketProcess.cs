@@ -9,6 +9,7 @@ using JetBrains.Annotations;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
+using Lykke.Service.PaySettlement.Cqrs.Helpers;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Processes
 {

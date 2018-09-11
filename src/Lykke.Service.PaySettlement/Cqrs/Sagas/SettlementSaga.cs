@@ -9,10 +9,11 @@ using JetBrains.Annotations;
 using Lykke.Cqrs;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
+using Lykke.Service.PaySettlement.Cqrs.Events;
 using Lykke.Service.PaySettlement.Modules;
 using Lykke.Service.PaySettlement.Settings;
 
-namespace Lykke.Service.PaySettlement.Cqrs
+namespace Lykke.Service.PaySettlement.Cqrs.Sagas
 {
     [UsedImplicitly]
     public class SettlementSaga
