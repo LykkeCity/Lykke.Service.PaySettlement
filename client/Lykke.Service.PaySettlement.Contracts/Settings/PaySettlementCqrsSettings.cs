@@ -1,5 +1,5 @@
 ﻿using Lykke.SettingsReader.Attributes;
-using System.Data;
+using Lykke.Messaging.Serialization;
 
 namespace Lykke.Service.PaySettlement.Contracts.Settings
 {
