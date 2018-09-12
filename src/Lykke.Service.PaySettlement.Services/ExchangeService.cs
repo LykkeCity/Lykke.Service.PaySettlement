@@ -104,8 +104,7 @@ namespace Lykke.Service.PaySettlement.Services
 
                 string marketOrderId = Guid.NewGuid().ToString();
 
-                MarketOrderResponse response = null;
-                //MarketOrderResponse response = await HandleMarketOrderAsync(exchangeOrder, marketOrderId);
+                MarketOrderResponse response = await HandleMarketOrderAsync(exchangeOrder, marketOrderId);
                 if (!IsResponseSuccess(exchangeOrder, response, out var isResponseSuccessResult))
                 {
                     return isResponseSuccessResult;
