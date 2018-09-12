@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using AzureStorage;
+﻿using AzureStorage;
 using AzureStorage.Tables.Templates.Index;
 using Lykke.Service.PaySettlement.Core.Domain;
-using System.Threading.Tasks;
 using Lykke.Service.PaySettlement.Core.Repositories;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 {
@@ -58,7 +57,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 {
                     r.SettlementStatus = SettlementStatus.TransferToMarketQueued;
                     r.Error = false;
-                    r.ErrorDescription = null;
+                    r.ErrorDescription = string.Empty;
                     return r;
                 });
         }
@@ -74,7 +73,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                     r.TransferToMarketTransactionHash = transactionHash;
                     r.SettlementStatus = SettlementStatus.TransferringToMarket;
                     r.Error = false;
-                    r.ErrorDescription = null;
+                    r.ErrorDescription = string.Empty;
                     return r;
                 });
 
@@ -95,7 +94,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                     r.TransferToMarketTransactionFee = transactionFee;
                     r.SettlementStatus = SettlementStatus.ExchangeQueued;
                     r.Error = false;
-                    r.ErrorDescription = null;
+                    r.ErrorDescription = string.Empty;
                     return r;
                 });
         }
@@ -110,7 +109,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                     r.MarketPrice = marketPrice;
                     r.SettlementStatus = SettlementStatus.Exchanged;
                     r.Error = false;
-                    r.ErrorDescription = null;
+                    r.ErrorDescription = string.Empty;
                     return r;
                 });
         }
@@ -124,7 +123,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                     r.SettlementStatus = SettlementStatus.TransferredToMerchant;
                     r.TransferredAmount = transferredAmount;
                     r.Error = false;
-                    r.ErrorDescription = null;
+                    r.ErrorDescription = string.Empty;
                     return r;
                 });
         }
