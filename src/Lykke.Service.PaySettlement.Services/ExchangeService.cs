@@ -63,7 +63,8 @@ namespace Lykke.Service.PaySettlement.Services
                 AssetPairId = assetPair.Id,
                 PaymentAssetId = paymentRequest.PaymentAssetId,
                 SettlementAssetId = paymentRequest.SettlementAssetId,
-                OrderAction = orderAction
+                OrderAction = orderAction,
+                LastAttemptUtc = DateTime.UtcNow - _attemptInterval
             };
 
             await _tradeOrdersRepository.InsertOrReplaceAsync(tradeOrder);
