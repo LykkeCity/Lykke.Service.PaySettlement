@@ -36,16 +36,6 @@ PaySettlementService:
         SettlementAssetIds:
             settings-key: PaySettlementService-AssetService-SettlementAssetIds
             types: [ JsonArray, Tag ]    
-    CqrsTxTransactions:
-        ConnectionString: 
-            settings-key: RabbitME
-            types: [ RabbitMq, Tag ]
-        Environment:
-            settings-key: PaySettlementService-CqrsTxTransactions-Environment
-            types: [ Tag ]
-        IsMainNet:
-            settings-key: PaySettlementService-CqrsTxTransactions-IsMainNet
-            types: [ Tag ]
     CqrsEnvironment:
         settings-key: PaySettlementService-CqrsEnvironment
         types: [ Tag ]
@@ -60,6 +50,26 @@ PaySettlementService:
         types: [ Tag ]
     ExchangeInterval:
         settings-key: PaySettlementService-ExchangeInterval
+        types: [ Tag ]
+
+CqrsBlockchainCashinDetector:
+    ConnectionString: 
+        settings-key: CqrsBlockchainCashinDetector-ConnectionString
+        types: [ RabbitMq, Tag ]
+    Environment:
+        settings-key: CqrsBlockchainCashinDetector-Environment
+        types: [ Tag ]
+    Messaging:
+        settings-key: CqrsBlockchainCashinDetector-Messaging
+        types: [ Tag ]
+    SerializationFormat:
+        settings-key: CqrsBlockchainCashinDetector-SerializationFormat
+        types: [ Tag ]
+    EventsRoute:
+        settings-key: CqrsBlockchainCashinDetector-EventsRoute
+        types: [ Tag ]
+    IsMainNet:
+        settings-key: CqrsBlockchainCashinDetector-IsMainNet
         types: [ Tag ]
         
 AssetsServiceClient:  

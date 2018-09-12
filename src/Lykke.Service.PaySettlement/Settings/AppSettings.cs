@@ -12,6 +12,7 @@ namespace Lykke.Service.PaySettlement.Settings
     {
         public PaySettlementSettings PaySettlementService { get; set; }
 
+        public CqrsBlockchainCashinDetectorSettings CqrsBlockchainCashinDetector { get; set; }
         public AssetsServiceSettings AssetsServiceClient { get; set; }
         public BalancesServiceClientSettings BalancesServiceClient { get; set; }
         public MatchingEngineSettings MatchingEngineClient { get; set; }

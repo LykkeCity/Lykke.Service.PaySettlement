@@ -15,8 +15,6 @@ namespace Lykke.Service.PaySettlement.Settings
 
         public AssetServiceSettings AssetService { get; set; }
 
-        public CqrsTxTransactionsSettings CqrsTxTransactions { get; set; }
-
         public string CqrsEnvironment { get; set; }
 
         public string ClientId { get; set; }

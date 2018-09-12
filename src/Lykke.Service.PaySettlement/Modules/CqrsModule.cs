@@ -6,15 +6,15 @@ using Lykke.Cqrs.Configuration;
 using Lykke.Messaging;
 using Lykke.Messaging.RabbitMq;
 using Lykke.Messaging.Serialization;
-using Lykke.Service.PaySettlement.Cqrs;
 using Lykke.Service.PaySettlement.Settings;
 using Lykke.SettingsReader;
 using System.Collections.Generic;
 using Common;
+using Lykke.Job.BlockchainCashinDetector.Contract;
+using Lykke.Job.BlockchainCashinDetector.Contract.Events;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Cqrs.CommandHandlers;
-using Lykke.Service.PaySettlement.Cqrs.Events;
 using Lykke.Service.PaySettlement.Cqrs.Helpers;
 using Lykke.Service.PaySettlement.Cqrs.Processes;
 using Lykke.Service.PaySettlement.Rabbit;
@@ -51,10 +51,10 @@ namespace Lykke.Service.PaySettlement.Modules
                 Uri = _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber.ConnectionString
             };
 
-            const string txTransactionsTransport = "TxTransactionsRabbitMq";
-            var txTransactionsSettings = new RabbitMQ.Client.ConnectionFactory
+            const string blockchainCashinDetectorTransport = "BlockchainCashinDetectorRabbitMq";
+            var blockchainCashinDetectorSettings = new RabbitMQ.Client.ConnectionFactory
             {
-                Uri = _appSettings.CurrentValue.PaySettlementService.CqrsTxTransactions.ConnectionString
+                Uri = _appSettings.CurrentValue.CqrsBlockchainCashinDetector.ConnectionString
             };
 
             builder.Register(ctx =>
@@ -62,7 +62,7 @@ namespace Lykke.Service.PaySettlement.Modules
                 var logFactory = ctx.Resolve<ILogFactory>();
 
                 var mainBroker = mainSettings.Endpoint.ToString();
-                var txTransactionsBroker = txTransactionsSettings.Endpoint.ToString();
+                var blockchainCashinDetectorBroker = blockchainCashinDetectorSettings.Endpoint.ToString();
 
                 var messagingEngine = new MessagingEngine(logFactory,
                     new TransportResolver(new Dictionary<string, TransportInfo>
@@ -73,9 +73,10 @@ namespace Lykke.Service.PaySettlement.Modules
                                 "RabbitMq")
                         },
                         {
-                            txTransactionsTransport,
-                            new TransportInfo(txTransactionsBroker, txTransactionsSettings.UserName,
-                                txTransactionsSettings.Password, "None", "RabbitMq")
+                            blockchainCashinDetectorTransport,
+                            new TransportInfo(blockchainCashinDetectorBroker, blockchainCashinDetectorSettings.UserName,
+                                blockchainCashinDetectorSettings.Password, "None", 
+                                _appSettings.CurrentValue.CqrsBlockchainCashinDetector.Messaging)
                         }
                     }),
                     new RabbitMqTransportFactory(logFactory));
@@ -139,12 +140,13 @@ namespace Lykke.Service.PaySettlement.Modules
                             typeof(SettlementExchangedEvent))
                         .From(SettlementBoundedContext).On(EventsRoute)
 
-                        .ListeningEvents(typeof(ConfirmationSavedEvent))
-                        .From("transactions").On("transactions-events")
+                        .ListeningEvents(typeof(CashinCompletedEvent))
+                        .From(BlockchainCashinDetectorBoundedContext.Name)
+                        .On(_appSettings.CurrentValue.CqrsBlockchainCashinDetector.EventsRoute)
                         .WithEndpointResolver(new RabbitMqConventionEndpointResolver(
-                            txTransactionsTransport,
-                            SerializationFormat.ProtoBuf,
-                            environment: _appSettings.CurrentValue.PaySettlementService.CqrsTxTransactions.Environment))
+                            blockchainCashinDetectorTransport,
+                            _appSettings.CurrentValue.CqrsBlockchainCashinDetector.SerializationFormat,
+                            environment: _appSettings.CurrentValue.CqrsBlockchainCashinDetector.Environment))
                 );
             })
             .As<ICqrsEngine>().SingleInstance().AutoActivate();
@@ -179,7 +181,7 @@ namespace Lykke.Service.PaySettlement.Modules
             
             builder.RegisterType<SettlementSaga>()
                 .WithParameter("multisigWalletAddress", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService.MultisigWalletAddress)
-                .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.CqrsTxTransactions);
+                .WithParameter("settings", _appSettings.CurrentValue.CqrsBlockchainCashinDetector);
         }
     }
 }

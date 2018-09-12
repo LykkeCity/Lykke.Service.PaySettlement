@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using AutoMapper;
 using JetBrains.Annotations;
 using Lykke.Cqrs;
+using Lykke.Job.BlockchainCashinDetector.Contract.Events;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
-using Lykke.Service.PaySettlement.Cqrs.Events;
 using Lykke.Service.PaySettlement.Modules;
 using Lykke.Service.PaySettlement.Settings;
 
@@ -21,16 +21,18 @@ namespace Lykke.Service.PaySettlement.Cqrs.Sagas
         private readonly INinjaClient _ninjaClient;
         private readonly Network _ninjaNetwork;
         private readonly string _multisigWalletAddress;
+        private readonly string _clientId;
         private readonly IMapper _mapper;
         private readonly ILog _log;
         
 
-        public SettlementSaga(INinjaClient ninjaClient, string multisigWalletAddress,
-            IMapper mapper, CqrsTxTransactionsSettings settings, ILogFactory logFactory)
+        public SettlementSaga(INinjaClient ninjaClient, string multisigWalletAddress, string clientId,
+            IMapper mapper, CqrsBlockchainCashinDetectorSettings settings, ILogFactory logFactory)
         {
             _ninjaClient = ninjaClient;
             _ninjaNetwork = settings.IsMainNet ? Network.Main : Network.TestNet;
             _multisigWalletAddress = multisigWalletAddress;
+            _clientId = clientId;
             _mapper = mapper;
             _log = logFactory.CreateLog(this);
         }
@@ -56,16 +58,16 @@ namespace Lykke.Service.PaySettlement.Cqrs.Sagas
                 CqrsModule.SettlementBoundedContext);
         }
 
-        public async Task Handle(ConfirmationSavedEvent transactionEvent, ICommandSender commandSender)
+        public async Task Handle(CashinCompletedEvent cashinCompletedEvent, ICommandSender commandSender)
         {
-            if (!string.Equals(transactionEvent.Multisig, _multisigWalletAddress, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(cashinCompletedEvent.ClientId.ToString(), _clientId, StringComparison.OrdinalIgnoreCase))
             {
                 return;
             }
 
             try
             {
-                var transaction = await _ninjaClient.GetTransactionAsync(transactionEvent.TransactionHash);
+                var transaction = await _ninjaClient.GetTransactionAsync(cashinCompletedEvent.TransactionHash);
                 if (transaction == null)
                 {
                     return;
@@ -73,7 +75,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Sagas
 
                 foreach (var rec in transaction.ReceivedCoins)
                 {
-                    if (!transactionEvent.Multisig.Equals(rec.TxOut.ScriptPubKey.GetDestinationAddress(_ninjaNetwork)
+                    if (!_multisigWalletAddress.Equals(rec.TxOut.ScriptPubKey.GetDestinationAddress(_ninjaNetwork)
                         ?.ToString()))
                     {
                         continue;
@@ -82,11 +84,11 @@ namespace Lykke.Service.PaySettlement.Cqrs.Sagas
                     decimal fee = transaction.Fees.ToDecimal(MoneyUnit.BTC);
 
                     _log.Info($"Lykke Pay to Multisig transaction is executed. Fee is {fee}.",
-                        new {TransactionHash = transactionEvent.TransactionHash});
+                        new {TransactionHash = cashinCompletedEvent.TransactionHash});
 
                     commandSender.SendCommand(new ExchangeCommand
                     {
-                        TransactionHash = transactionEvent.TransactionHash,
+                        TransactionHash = cashinCompletedEvent.TransactionHash,
                         TransactionFee = fee
                     }, CqrsModule.SettlementBoundedContext);
                 }
@@ -94,7 +96,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Sagas
             catch (Exception ex)
             {
                 _log.Error(ex, "Process transaction is failed.",
-                    new {TransactionHash = transactionEvent.TransactionHash});
+                    new {TransactionHash = cashinCompletedEvent.TransactionHash});
                 throw;
             }
         }
