@@ -103,10 +103,9 @@ namespace Lykke.Service.PaySettlement.Services
                     return isBalanceEnoughResult;
                 }
 
-                string marketOrderId = Guid.NewGuid().ToString();
-
-                MarketOrderResponse response = await HandleMarketOrderAsync(exchangeOrder, marketOrderId);
-                if (!IsResponseSuccess(exchangeOrder, response, out var isResponseSuccessResult))
+                MarketOrderResponse response = await HandleMarketOrderAsync(exchangeOrder,
+                    out MarketOrderModel model);
+                if (!IsResponseSuccess(exchangeOrder, model, response, out var isResponseSuccessResult))
                 {
                     return isResponseSuccessResult;
                 }
@@ -120,7 +119,7 @@ namespace Lykke.Service.PaySettlement.Services
                     MerchantId = exchangeOrder.MerchantId,
                     PaymentRequestId = exchangeOrder.PaymentRequestId,
                     MarketPrice = (decimal)response.Price,
-                    MarketOrderId = marketOrderId,
+                    MarketOrderId = model.Id,
                     AssetPairId = exchangeOrder.AssetPairId
                 };
             }
@@ -172,12 +171,13 @@ namespace Lykke.Service.PaySettlement.Services
             return false;
         }
 
-        private Task<MarketOrderResponse> HandleMarketOrderAsync(IExchangeOrder exchangeOrder, string marketOrderId)
+        private Task<MarketOrderResponse> HandleMarketOrderAsync(IExchangeOrder exchangeOrder, 
+            out MarketOrderModel model)
         {
-            var model = new MarketOrderModel()
+            model = new MarketOrderModel()
             {
-                Id = marketOrderId,
-                AssetPairId = exchangeOrder.AssetPairId,
+                Id = Guid.NewGuid().ToString(),
+            AssetPairId = exchangeOrder.AssetPairId,
                 ClientId = _clientId,
                 OrderAction = OrderAction.Sell,
                 Straight = IsStraight(exchangeOrder.OrderAction),
@@ -194,13 +194,15 @@ namespace Lykke.Service.PaySettlement.Services
             return _matchingEngineClient.HandleMarketOrderAsync(model);
         }
 
-        private bool IsResponseSuccess(IExchangeOrder exchangeOrder, MarketOrderResponse response,
-            out ExchangeResult result)
+        private bool IsResponseSuccess(IExchangeOrder exchangeOrder, MarketOrderModel model,
+            MarketOrderResponse response, out ExchangeResult result)
         {
             result = null;
             if (response?.Status == MeStatusCodes.Ok)
             {
-                _log.Info($"Handled market order.\r\nResponse: {response.ToJson()}", new
+                _log.Info("Handled market order.\r\n " +
+                          $"Request: {model.ToJson()}\r\n" +
+                          $"Response: {response.ToJson()}", new
                 {
                     exchangeOrder.MerchantId,
                     exchangeOrder.PaymentRequestId
@@ -209,7 +211,9 @@ namespace Lykke.Service.PaySettlement.Services
                 return true;
             }
 
-            string errorMessage = $"Can not handle market order.\r\nResponse: {response?.ToJson()}";
+            string errorMessage = "Can not handle market order.\r\n" +
+                                  $"Request: { model.ToJson()}\r\n" +
+                                  $"Response: {response?.ToJson()}";
 
             _log.Warning(errorMessage, null, new
             {
