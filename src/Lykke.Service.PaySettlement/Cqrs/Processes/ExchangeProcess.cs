@@ -51,7 +51,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
 
                 await ProcessExchangeResultAsync(result);
 
-            } while (result?.IsSuccess == true);
+            } while (result != null);
         }
 
         private async Task ProcessExchangeResultAsync(ExchangeResult result)

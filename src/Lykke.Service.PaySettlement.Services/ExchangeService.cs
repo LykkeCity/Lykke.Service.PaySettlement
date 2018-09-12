@@ -20,17 +20,20 @@ namespace Lykke.Service.PaySettlement.Services
         private readonly IAssetService _assetService;
         private readonly ILykkeBalanceService _lykkeBalanceService;
         private readonly string _clientId;
+        private readonly TimeSpan _attemptInterval;
         private readonly ILog _log;
 
         public ExchangeService(IMatchingEngineClient matchingEngineClient, 
             ITradeOrdersRepository tradeOrdersRepository, IAssetService assetService, 
-            ILykkeBalanceService lykkeBalanceService, string clientId, ILogFactory logFactory)
+            ILykkeBalanceService lykkeBalanceService, string clientId, 
+            TimeSpan attemptInterval, ILogFactory logFactory)
         {
             _matchingEngineClient = matchingEngineClient;
             _tradeOrdersRepository = tradeOrdersRepository;
             _assetService = assetService;
             _lykkeBalanceService = lykkeBalanceService;                        
             _clientId = clientId;
+            _attemptInterval = attemptInterval;
 
             _log = logFactory.CreateLog(this);
         }
@@ -69,13 +72,25 @@ namespace Lykke.Service.PaySettlement.Services
 
         public async Task<ExchangeResult> ExchangeAsync()
         {
-            IExchangeOrder exchangeOrder = await _tradeOrdersRepository.GetTopOrderAsync();
+            IExchangeOrder exchangeOrder =
+                await _tradeOrdersRepository.GetTopOrderAsync(DateTime.UtcNow - _attemptInterval);
             if (exchangeOrder == null)
             {
                 return null;
             }
 
-            return await ExchangeAsync(exchangeOrder);
+            ExchangeResult result = await ExchangeAsync(exchangeOrder);
+            if (result.IsSuccess)
+            {
+                await _tradeOrdersRepository.DeleteAsync(exchangeOrder);
+            }
+            else
+            {
+                await _tradeOrdersRepository.SetLastAttemptAsync(exchangeOrder.AssetPairId,
+                    exchangeOrder.PaymentRequestId, DateTime.UtcNow);
+            }
+
+            return result;
         }
 
         private async Task<ExchangeResult> ExchangeAsync(IExchangeOrder exchangeOrder)
@@ -88,16 +103,16 @@ namespace Lykke.Service.PaySettlement.Services
                 }
 
                 string marketOrderId = Guid.NewGuid().ToString();
-                MarketOrderResponse response = await HandleMarketOrderAsync(exchangeOrder, marketOrderId);
+
+                MarketOrderResponse response = null;
+                //MarketOrderResponse response = await HandleMarketOrderAsync(exchangeOrder, marketOrderId);
                 if (!IsResponseSuccess(exchangeOrder, response, out var isResponseSuccessResult))
                 {
                     return isResponseSuccessResult;
                 }
 
                 _lykkeBalanceService.AddAsset(exchangeOrder.PaymentAssetId, -exchangeOrder.Volume);
-                _lykkeBalanceService.AddAsset(exchangeOrder.SettlementAssetId, exchangeOrder.Volume * (decimal)response.Price);
-
-                await _tradeOrdersRepository.DeleteAsync(exchangeOrder);
+                _lykkeBalanceService.AddAsset(exchangeOrder.SettlementAssetId, exchangeOrder.Volume * (decimal)response.Price);                
 
                 return new ExchangeResult
                 {

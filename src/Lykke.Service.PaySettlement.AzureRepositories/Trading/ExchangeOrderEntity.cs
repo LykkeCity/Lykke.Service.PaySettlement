@@ -42,6 +42,18 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
             }
         }
 
+        private DateTime _lastAttemptUtc;
+
+        public DateTime LastAttemptUtc
+        {
+            get => _lastAttemptUtc;
+            set
+            {
+                _lastAttemptUtc = value;
+                MarkValueTypePropertyAsDirty(nameof(LastAttemptUtc));
+            }
+        }
+
         public ExchangeOrderEntity()
         {
         }
@@ -57,6 +69,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.Trading
             SettlementAssetId = exchangeOrder.SettlementAssetId;
             OrderAction = exchangeOrder.OrderAction;
             Volume = exchangeOrder.Volume;
+            LastAttemptUtc = exchangeOrder.LastAttemptUtc;
         }
 
         internal static string GetPartitionKey(string assetPairId)

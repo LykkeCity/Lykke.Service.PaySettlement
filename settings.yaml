@@ -7,7 +7,7 @@ PaySettlementService:
             settings-key: LykkePayDataConnString
             types: [ AzureTableStorage, Tag ]
         PaymentRequestsTableName: PaySettlementPaymentRequests
-        TradeOrdersTableName: PaySettlementTradeOrders
+        ExchangeOrdersTableName: PaySettlementExchangeOrders
         TransferToMarketQueue: PaySettlementTransferToMarket
     PaymentRequestsSubscriber:
         ConnectionString: 

@@ -86,7 +86,8 @@ namespace Lykke.Service.PaySettlement.Modules
             builder.RegisterType<ExchangeService>()
                 .As<IExchangeService>()
                 .SingleInstance()
-                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);            
+                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId)
+                .WithParameter("attemptInterval", _appSettings.CurrentValue.PaySettlementService.ExchangeInterval);
 
             builder.RegisterType<TransferToMerchantLykkeWalletService>()
                 .As<ITransferToMerchantLykkeWalletService>()
@@ -132,10 +133,10 @@ namespace Lykke.Service.PaySettlement.Modules
                 .SingleInstance();
 
             builder.Register(c =>
-                    new TradeOrdersRepository(
+                    new ExchangeOrdersRepository(
                         AzureTableStorage<ExchangeOrderEntity>.Create(
                             _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
-                            _appSettings.CurrentValue.PaySettlementService.Db.TradeOrdersTableName,
+                            _appSettings.CurrentValue.PaySettlementService.Db.ExchangeOrdersTableName,
                             c.Resolve<ILogFactory>())))
                 .As<ITradeOrdersRepository>()
                 .SingleInstance();

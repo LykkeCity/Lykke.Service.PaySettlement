@@ -1,4 +1,5 @@
-﻿using Lykke.MatchingEngine.Connector.Models.Common;
+﻿using System;
+using Lykke.MatchingEngine.Connector.Models.Common;
 
 namespace Lykke.Service.PaySettlement.Core.Domain
 {
@@ -13,5 +14,7 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         OrderAction OrderAction { get; }
 
         decimal Volume { get; }
+
+        DateTime LastAttemptUtc { get; }
     }
 }

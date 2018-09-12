@@ -12,7 +12,7 @@ namespace Lykke.Service.PaySettlement.Settings
 
         public string PaymentRequestsTableName { get; set; }
 
-        public string TradeOrdersTableName { get; set; }
+        public string ExchangeOrdersTableName { get; set; }
 
         public string TransferToMarketQueue { get; set; }
     }
