@@ -113,6 +113,40 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 return false;
             }
 
+            var paymentAsset = _assetService.GetAsset(command.PaymentAssetId);
+            if ((decimal)paymentAsset.CashoutMinimalAmount > command.PaidAmount)
+            {
+                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less then " +
+                          $"{nameof(paymentAsset.CashoutMinimalAmount)} ({paymentAsset.CashoutMinimalAmount}).", new
+                {
+                    command.MerchantId,
+                    command.PaymentRequestId
+                });
+                return false;
+            }
+
+            if ((decimal)paymentAsset.CashinMinimalAmount > command.PaidAmount)
+            {
+                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less then " +
+                          $"{nameof(paymentAsset.CashinMinimalAmount)} ({paymentAsset.CashinMinimalAmount}).", new
+                {
+                    command.MerchantId,
+                    command.PaymentRequestId
+                });
+                return false;
+            }
+
+            if ((decimal?)paymentAsset.LowVolumeAmount > command.PaidAmount)
+            {
+                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less then " +
+                          $"{nameof(paymentAsset.LowVolumeAmount)} ({paymentAsset.LowVolumeAmount}).", new
+                {
+                    command.MerchantId,
+                    command.PaymentRequestId
+                });
+                return false;
+            }
+
             return true;
         }
        

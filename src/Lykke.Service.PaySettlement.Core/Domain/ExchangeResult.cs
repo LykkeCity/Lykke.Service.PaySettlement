@@ -4,6 +4,8 @@
     {
         public bool IsSuccess { get; set; }
 
+        public bool CanBeRetried { get; set; }
+
         public string ErrorMessage { get; set; }
 
         public decimal MarketPrice { get; set; }

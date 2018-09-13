@@ -81,7 +81,7 @@ namespace Lykke.Service.PaySettlement.Services
             }
 
             ExchangeResult result = await ExchangeAsync(exchangeOrder);
-            if (result.IsSuccess)
+            if (result.IsSuccess || !result.CanBeRetried)
             {
                 await _tradeOrdersRepository.DeleteAsync(exchangeOrder);
             }
@@ -224,10 +224,19 @@ namespace Lykke.Service.PaySettlement.Services
             result = new ExchangeResult
             {
                 IsSuccess = false,
+                CanBeRetried = false,
                 ErrorMessage = errorMessage,
                 MerchantId = exchangeOrder.MerchantId,
                 PaymentRequestId = exchangeOrder.PaymentRequestId
             };
+
+            if (response == null 
+                || response?.Status == MeStatusCodes.NoLiquidity
+                || response?.Status == MeStatusCodes.LeadToNegativeSpread
+                || response?.Status == MeStatusCodes.Runtime)
+            {
+                result.CanBeRetried = true;
+            }
 
             return false;
         }

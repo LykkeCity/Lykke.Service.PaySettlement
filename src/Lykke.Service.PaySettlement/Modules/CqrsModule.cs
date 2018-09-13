@@ -181,6 +181,7 @@ namespace Lykke.Service.PaySettlement.Modules
             
             builder.RegisterType<SettlementSaga>()
                 .WithParameter("multisigWalletAddress", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService.MultisigWalletAddress)
+                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId)
                 .WithParameter("settings", _appSettings.CurrentValue.CqrsBlockchainCashinDetector);
         }
     }
