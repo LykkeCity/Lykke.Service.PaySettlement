@@ -1,9 +1,12 @@
-﻿using AzureStorage;
+﻿using System;
+using AzureStorage;
 using AzureStorage.Tables.Templates.Index;
 using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Repositories;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage.Table;
 
 namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 {
@@ -11,13 +14,19 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
     {
         private readonly INoSQLTableStorage<PaymentRequestEntity> _storage;
         private readonly INoSQLTableStorage<AzureIndex> _indexByTransferToMarketTransactionHash;
+        private readonly INoSQLTableStorage<AzureIndex> _indexByWalletAddress;
+        private readonly INoSQLTableStorage<AzureIndex> _indexByDueDate;
 
         public PaymentRequestsRepository(
             INoSQLTableStorage<PaymentRequestEntity> storage,
-            INoSQLTableStorage<AzureIndex> indexByTransferToMarketTransactionHash)
+            INoSQLTableStorage<AzureIndex> indexByTransferToMarketTransactionHash,
+            INoSQLTableStorage<AzureIndex> indexByWalletAddress,
+            INoSQLTableStorage<AzureIndex> indexByDueDate)
         {
             _storage = storage;
             _indexByTransferToMarketTransactionHash = indexByTransferToMarketTransactionHash;
+            _indexByWalletAddress = indexByWalletAddress;
+            _indexByDueDate = indexByDueDate;
         }
 
         public async Task<IPaymentRequest> GetAsync(string merchantId, string id)
@@ -30,7 +39,60 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         {
             var index = await _indexByTransferToMarketTransactionHash.GetDataAsync(
                 IndexByTransferToMarketTransactionHash.GeneratePartitionKey(transactionHash));
+
+            if (index == null)
+            {
+                return null;
+            }
+
             return await _storage.GetDataAsync(index);
+        }
+
+        public async Task<IPaymentRequest> GetByWalletAddressAsync(string walletAddress)
+        {
+            var index = await _indexByWalletAddress.GetDataAsync(
+                IndexByWalletAddress.GeneratePartitionKey(walletAddress), IndexByWalletAddress.GenerateRowKey());
+
+            if (index == null)
+            {
+                return null;
+            }
+
+            return await _storage.GetDataAsync(index);
+        }
+
+        public async Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByDueDateAsync(
+            DateTime fromDueDate, DateTime toDueDate, int take, string continuationToken = null)
+        {
+            string geDate = IndexByDueDate.GeneratePartitionKey(fromDueDate);
+
+            string leDate = IndexByDueDate.GeneratePartitionKey(toDueDate);
+
+            var filter = TableQuery.CombineFilters(
+                TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.GreaterThanOrEqual, geDate),
+                TableOperators.And,
+                TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.LessThanOrEqual, leDate));
+
+            var query = new TableQuery<AzureIndex>().Where(filter);
+
+            var indices = await _indexByDueDate.GetDataWithContinuationTokenAsync(query, take, continuationToken);
+            var paymentRequests = await _storage.GetDataAsync(indices.Entities);
+
+            (IEnumerable<IPaymentRequest> Entities, string ContinuationToken) result = 
+                (paymentRequests, indices.ContinuationToken);
+
+            return result;
+        }
+
+        public async Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByMerchantAsync(
+            string merchantId, int take, string continuationToken = null)
+        {
+            var paymentRequests = await _storage.GetDataWithContinuationTokenAsync(merchantId, take, continuationToken);
+            
+            (IEnumerable<IPaymentRequest> Entities, string ContinuationToken) result =
+                (paymentRequests.Entities, paymentRequests.ContinuationToken);
+
+            return result;
         }
 
         public Task InsertOrReplaceAsync(IPaymentRequest paymentRequest)
@@ -38,6 +100,12 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             var tasks = new List<Task>();
             var entity = new PaymentRequestEntity(paymentRequest);
             tasks.Add(_storage.InsertOrReplaceAsync(entity));
+
+            AzureIndex indexByWalletAddress = IndexByWalletAddress.Create(entity);
+            tasks.Add(_indexByWalletAddress.InsertOrReplaceAsync(indexByWalletAddress));
+
+            AzureIndex indexByDueDate = IndexByDueDate.Create(entity);
+            tasks.Add(_indexByDueDate.InsertOrReplaceAsync(indexByDueDate));
 
             if (!string.IsNullOrEmpty(paymentRequest.TransferToMarketTransactionHash))
             {

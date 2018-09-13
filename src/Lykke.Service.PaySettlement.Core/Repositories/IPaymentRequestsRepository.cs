@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Lykke.Service.PaySettlement.Core.Domain;
 
@@ -9,6 +10,14 @@ namespace Lykke.Service.PaySettlement.Core.Repositories
         Task<IPaymentRequest> GetAsync(string merchantId, string id);
 
         Task<IEnumerable<IPaymentRequest>> GetByTransferToMarketTransactionHash(string transactionHash);
+
+        Task<IPaymentRequest> GetByWalletAddressAsync(string walletAddress);
+
+        Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByDueDateAsync(DateTime fromDueDate,
+            DateTime toDueDate, int take, string continuationToken = null);
+
+        Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByMerchantAsync(
+            string merchantId, int take, string continuationToken = null);
 
         Task InsertOrReplaceAsync(IPaymentRequest paymentRequestEntity);
 

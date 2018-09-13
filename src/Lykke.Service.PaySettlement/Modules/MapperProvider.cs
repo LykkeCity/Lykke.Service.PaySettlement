@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using AutoMapper.Configuration;
+using Lykke.Service.PayInternal.Client.Models.PaymentRequest;
 using Lykke.Service.PayInternal.Contract.PaymentRequest;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Cqrs;
+using PaymentRequest = Lykke.Service.PaySettlement.Core.Domain.PaymentRequest;
 
 namespace Lykke.Service.PaySettlement.Modules
 {
@@ -15,6 +17,7 @@ namespace Lykke.Service.PaySettlement.Modules
             var mce = new MapperConfigurationExpression();
 
             CreateRabbitMaps(mce);
+            CreatePaymentRequestControllerMaps(mce);
 
             var mc = new MapperConfiguration(mce);
             mc.AssertConfigurationIsValid();
@@ -43,6 +46,11 @@ namespace Lykke.Service.PaySettlement.Modules
                 .ForMember(d => d.SettlementStatus, e => e.UseValue(SettlementStatus.None))
                 .ForMember(d => d.Error, e => e.Ignore())
                 .ForMember(d => d.ErrorDescription, e => e.Ignore());
+        }
+
+        private void CreatePaymentRequestControllerMaps(MapperConfigurationExpression mce)
+        {
+            mce.CreateMap<IPaymentRequest, Models.PaymentRequestModel>();
         }
     }
 }

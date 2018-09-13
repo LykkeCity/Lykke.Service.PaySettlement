@@ -128,6 +128,14 @@ namespace Lykke.Service.PaySettlement.Modules
                         AzureTableStorage<AzureIndex>.Create(
                             _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
                             _appSettings.CurrentValue.PaySettlementService.Db.PaymentRequestsTableName,
+                            c.Resolve<ILogFactory>()),
+                        AzureTableStorage<AzureIndex>.Create(
+                            _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
+                            _appSettings.CurrentValue.PaySettlementService.Db.PaymentRequestsTableName,
+                            c.Resolve<ILogFactory>()),
+                        AzureTableStorage<AzureIndex>.Create(
+                            _appSettings.ConnectionString(x => x.PaySettlementService.Db.DataConnString),
+                            _appSettings.CurrentValue.PaySettlementService.Db.PaymentRequestsTableName,
                             c.Resolve<ILogFactory>())))
                 .As<IPaymentRequestsRepository>()
                 .SingleInstance();

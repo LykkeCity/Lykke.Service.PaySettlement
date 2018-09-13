@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Common.Log;
 using Lykke.Common.Log;
 using Lykke.Service.PaySettlement.Core.Domain;
@@ -29,6 +30,28 @@ namespace Lykke.Service.PaySettlement.Services
         {
             return _paymentRequestsRepository.GetAsync(merchantId, paymentRequestId);
 
+        }
+
+        public Task<IEnumerable<IPaymentRequest>> GetByTransferToMarketTransactionHash(string transactionHash)
+        {
+            return _paymentRequestsRepository.GetByTransferToMarketTransactionHash(transactionHash);
+        }
+
+        public Task<IPaymentRequest> GetByWalletAddressAsync(string walletAddress)
+        {
+            return _paymentRequestsRepository.GetByWalletAddressAsync(walletAddress);
+        }
+
+        public Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByDueDateAsync(DateTime fromDueDate,
+            DateTime toDueDate, int take, string continuationToken = null)
+        {
+            return _paymentRequestsRepository.GetByDueDateAsync(fromDueDate, toDueDate, take, continuationToken);
+        }
+
+        public Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByMerchantAsync(
+            string merchantId, int take, string continuationToken = null)
+        {
+            return _paymentRequestsRepository.GetByMerchantAsync(merchantId, take, continuationToken);
         }
 
         public async Task AddAsync(IPaymentRequest paymentRequest)
@@ -78,12 +101,7 @@ namespace Lykke.Service.PaySettlement.Services
                 });
 
             return paymentRequest;
-        }
-
-        public Task<IEnumerable<IPaymentRequest>> GetByTransferToMarketTransactionHash(string transactionHash)
-        {
-            return _paymentRequestsRepository.GetByTransferToMarketTransactionHash(transactionHash);
-        }
+        }        
 
         public async Task<IPaymentRequest> SetExchangeQueuedAsync(IExchangeOrder exchangeOrder, 
             decimal transactionFee)
