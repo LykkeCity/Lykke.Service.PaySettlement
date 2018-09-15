@@ -21,14 +21,23 @@ namespace Lykke.Service.PaySettlement.Models
         public Decimal PaidAmount { get; set; }
         public DateTime? PaidDate { get; set; }
         public DateTime PaymentRequestTimestamp { get; set; }
+
+        public DateTime SettlementCreatedUtc { get; set; }
+        public SettlementStatus SettlementStatus { get; set; }
+        
         public string TransferToMarketTransactionHash { get; set; }
         public decimal TransferToMarketTransactionFee { get; set; }
-        public SettlementStatus SettlementStatus { get; set; }
+        public DateTime? TransferedToMarketUtc { get; set; }
+
         public Decimal ExchangeAmount { get; set; }
         public decimal MarketPrice { get; set; }
         public string MarketOrderId { get; set; }
+        public DateTime? ExchangedUtc { get; set; }
+
         public decimal TransferredAmount { get; set; }
         public string MerchantClientId { get; set; }
+        public DateTime? TransferedToMerchantUtc { get; set; }
+
         public bool Error { get; set; }
         public string ErrorDescription { get; set; }
     }
