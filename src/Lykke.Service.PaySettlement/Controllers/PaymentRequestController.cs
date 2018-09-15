@@ -118,24 +118,24 @@ namespace Lykke.Service.PaySettlement.Controllers
         /// <summary>
         /// Returns payment requests.
         /// </summary>
-        /// <param name="fromDueDate">Bottom border of the payment request due date interval.</param>
-        /// <param name="toDueDate">Top border of the payment request due date interval.</param>
+        /// <param name="from">Bottom border of the settlement start interval.</param>
+        /// <param name="to">Top border of the settlement start interval.</param>
         /// <param name="take">Max count of entries in the result.</param>
         /// <param name="continuationToken">Token for next page, pass null for first page.</param>
         /// <returns code="200">Payment requests.</returns>
         /// <returns code="404">Payment requests are not found.</returns>
         /// <returns code="400">Input arguments are invalid.</returns>
         [HttpGet]
-        [SwaggerOperation("GetPaymentRequestsByDueDate")]
+        [SwaggerOperation("GetPaymentRequestsBySettlementCreated")]
         [ProducesResponseType(typeof(ContinuationResult<PaymentRequestModel>), (int)HttpStatusCode.OK)]
         [ProducesResponseType((int)HttpStatusCode.NotFound)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.BadRequest)]
         [ValidateModel]
-        public async Task<IActionResult> GetPaymentRequestsByDueDate(
-            DateTime fromDueDate, DateTime toDueDate, int take, string continuationToken = null)
+        public async Task<IActionResult> GetPaymentRequestsBySettlementCreated(
+            DateTime from, DateTime to, int take, string continuationToken = null)
         {
-            var paymentRequests = await _paymentRequestService.GetByDueDateAsync(
-                fromDueDate, toDueDate, take, continuationToken);
+            var paymentRequests = await _paymentRequestService.GetBySettlementCreatedAsync(
+                from, to, take, continuationToken);
 
             if (!paymentRequests.Entities.Any())
             {

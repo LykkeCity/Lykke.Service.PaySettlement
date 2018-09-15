@@ -15,18 +15,18 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         private readonly INoSQLTableStorage<PaymentRequestEntity> _storage;
         private readonly INoSQLTableStorage<AzureIndex> _indexByTransferToMarketTransactionHash;
         private readonly INoSQLTableStorage<AzureIndex> _indexByWalletAddress;
-        private readonly INoSQLTableStorage<AzureIndex> _indexByDueDate;
+        private readonly INoSQLTableStorage<AzureIndex> _indexBySettlementCreated;
 
         public PaymentRequestsRepository(
             INoSQLTableStorage<PaymentRequestEntity> storage,
             INoSQLTableStorage<AzureIndex> indexByTransferToMarketTransactionHash,
             INoSQLTableStorage<AzureIndex> indexByWalletAddress,
-            INoSQLTableStorage<AzureIndex> indexByDueDate)
+            INoSQLTableStorage<AzureIndex> indexBySettlementCreated)
         {
             _storage = storage;
             _indexByTransferToMarketTransactionHash = indexByTransferToMarketTransactionHash;
             _indexByWalletAddress = indexByWalletAddress;
-            _indexByDueDate = indexByDueDate;
+            _indexBySettlementCreated = indexBySettlementCreated;
         }
 
         public async Task<IPaymentRequest> GetAsync(string merchantId, string id)
@@ -61,12 +61,12 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             return await _storage.GetDataAsync(index);
         }
 
-        public async Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByDueDateAsync(
-            DateTime fromDueDate, DateTime toDueDate, int take, string continuationToken = null)
+        public async Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetBySettlementCreatedAsync(
+            DateTime from, DateTime to, int take, string continuationToken = null)
         {
-            string geDate = IndexByDueDate.GeneratePartitionKey(fromDueDate);
+            string geDate = IndexBySettlementCreated.GeneratePartitionKey(from);
 
-            string leDate = IndexByDueDate.GeneratePartitionKey(toDueDate);
+            string leDate = IndexBySettlementCreated.GeneratePartitionKey(to);
 
             var filter = TableQuery.CombineFilters(
                 TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.GreaterThanOrEqual, geDate),
@@ -75,7 +75,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
             var query = new TableQuery<AzureIndex>().Where(filter);
 
-            var indices = await _indexByDueDate.GetDataWithContinuationTokenAsync(query, take, continuationToken);
+            var indices = await _indexBySettlementCreated.GetDataWithContinuationTokenAsync(query, take, 
+                continuationToken);
             var paymentRequests = await _storage.GetDataAsync(indices.Entities);
 
             (IEnumerable<IPaymentRequest> Entities, string ContinuationToken) result = 
@@ -99,13 +100,15 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         {
             var tasks = new List<Task>();
             var entity = new PaymentRequestEntity(paymentRequest);
+            entity.SettlementCreatedUtc = DateTime.UtcNow;
+
             tasks.Add(_storage.InsertOrReplaceAsync(entity));
 
             AzureIndex indexByWalletAddress = IndexByWalletAddress.Create(entity);
             tasks.Add(_indexByWalletAddress.InsertOrReplaceAsync(indexByWalletAddress));
 
-            AzureIndex indexByDueDate = IndexByDueDate.Create(entity);
-            tasks.Add(_indexByDueDate.InsertOrReplaceAsync(indexByDueDate));
+            AzureIndex indexBySettlementCreated = IndexBySettlementCreated.Create(entity);
+            tasks.Add(_indexBySettlementCreated.InsertOrReplaceAsync(indexBySettlementCreated));
 
             if (!string.IsNullOrEmpty(paymentRequest.TransferToMarketTransactionHash))
             {
@@ -160,6 +163,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 {
                     r.ExchangeAmount = exchangeAmount;
                     r.TransferToMarketTransactionFee = transactionFee;
+                    r.TransferedToMarketUtc = DateTime.UtcNow;
                     r.SettlementStatus = SettlementStatus.ExchangeQueued;
                     r.Error = false;
                     r.ErrorDescription = string.Empty;
@@ -175,6 +179,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 {
                     r.MarketOrderId = marketOrderId;
                     r.MarketPrice = marketPrice;
+                    r.ExchangedUtc = DateTime.UtcNow;
                     r.SettlementStatus = SettlementStatus.Exchanged;
                     r.Error = false;
                     r.ErrorDescription = string.Empty;
@@ -190,6 +195,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 {
                     r.SettlementStatus = SettlementStatus.TransferredToMerchant;
                     r.TransferredAmount = transferredAmount;
+                    r.TransferedToMerchantUtc = DateTime.UtcNow;
                     r.Error = false;
                     r.ErrorDescription = string.Empty;
                     return r;

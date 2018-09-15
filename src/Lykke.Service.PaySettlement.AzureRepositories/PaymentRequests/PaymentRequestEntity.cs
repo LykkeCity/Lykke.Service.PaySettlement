@@ -109,15 +109,15 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             }
         }
 
-        public string TransferToMarketTransactionHash { get; set; }
 
-        private decimal _transferToMarketTransactionFee;
-        public decimal TransferToMarketTransactionFee {
-            get =>_transferToMarketTransactionFee;
+        private DateTime _settlementCreatedUtc;
+        public DateTime SettlementCreatedUtc
+        {
+            get => _settlementCreatedUtc;
             set
             {
-                _transferToMarketTransactionFee = value;
-                MarkValueTypePropertyAsDirty(nameof(TransferToMarketTransactionFee));
+                _settlementCreatedUtc = value;
+                MarkValueTypePropertyAsDirty(nameof(SettlementCreatedUtc));
             }
         }
 
@@ -131,6 +131,22 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 MarkValueTypePropertyAsDirty(nameof(SettlementStatus));
             }
         }
+
+        
+        public string TransferToMarketTransactionHash { get; set; }
+
+        private decimal _transferToMarketTransactionFee;
+        public decimal TransferToMarketTransactionFee {
+            get =>_transferToMarketTransactionFee;
+            set
+            {
+                _transferToMarketTransactionFee = value;
+                MarkValueTypePropertyAsDirty(nameof(TransferToMarketTransactionFee));
+            }
+        }
+
+        public DateTime? TransferedToMarketUtc { get; set; }
+
 
         private decimal _exchangeAmount;
         public decimal ExchangeAmount
@@ -156,6 +172,9 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         public string MarketOrderId { get; set; }
 
+        public DateTime? ExchangedUtc { get; set; }
+
+
         private decimal _transferredAmount;
         public decimal TransferredAmount
         {
@@ -169,6 +188,9 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         public string MerchantClientId { get; set; }
 
+        public DateTime? TransferedToMerchantUtc { get; set; }
+
+
         private bool _error;
         public bool Error
         {
@@ -179,7 +201,9 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 MarkValueTypePropertyAsDirty(nameof(Error));
             }
         }
+
         public string ErrorDescription { get; set; }
+
 
         public PaymentRequestEntity()
         {
@@ -204,14 +228,23 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             PaidAmount = paymentRequest.PaidAmount;
             PaidDate = paymentRequest.PaidDate;
             PaymentRequestTimestamp = paymentRequest.PaymentRequestTimestamp;
+
+            SettlementCreatedUtc = paymentRequest.SettlementCreatedUtc;
+            SettlementStatus = paymentRequest.SettlementStatus;
+
             TransferToMarketTransactionHash = paymentRequest.TransferToMarketTransactionHash;
             TransferToMarketTransactionFee = paymentRequest.TransferToMarketTransactionFee;
-            SettlementStatus = paymentRequest.SettlementStatus;
+            TransferedToMarketUtc = paymentRequest.TransferedToMarketUtc;
+
             ExchangeAmount = paymentRequest.ExchangeAmount;
             MarketPrice = paymentRequest.MarketPrice;
             MarketOrderId = paymentRequest.MarketOrderId;
+            ExchangedUtc = paymentRequest.ExchangedUtc;
+
             TransferredAmount = paymentRequest.TransferredAmount;
             MerchantClientId = paymentRequest.MerchantClientId;
+            TransferedToMerchantUtc = paymentRequest.TransferedToMerchantUtc;
+
             Error = paymentRequest.Error;
             ErrorDescription = paymentRequest.ErrorDescription;
         }

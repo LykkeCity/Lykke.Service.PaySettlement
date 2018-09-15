@@ -3,11 +3,11 @@ using System;
 
 namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 {
-    internal static class IndexByDueDate
+    internal static class IndexBySettlementCreated
     {
-        internal static string GeneratePartitionKey(DateTime dueDate)
+        internal static string GeneratePartitionKey(DateTime settlementCreatedUtc)
         {
-            return dueDate.ToString("yyyy-MM-ddTHH:mm");
+            return settlementCreatedUtc.ToString("yyyy-MM-ddTHH:mm");
         }
 
         internal static string GenerateRowKey(string paymentRequestId)
@@ -22,14 +22,14 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         internal static AzureIndex Create(PaymentRequestEntity entity)
         {
-            return AzureIndex.Create(GeneratePartitionKey(entity.DueDate),
+            return AzureIndex.Create(GeneratePartitionKey(entity.SettlementCreatedUtc),
                 GenerateRowKey(entity.PaymentRequestId), entity);
         }
 
         internal static AzureIndex Create(string merchantId, string paymentRequestId,
-            DateTime dueDate)
+            DateTime settlementCreatedUtc)
         {
-            return AzureIndex.Create(GeneratePartitionKey(dueDate),
+            return AzureIndex.Create(GeneratePartitionKey(settlementCreatedUtc),
                 GenerateRowKey(paymentRequestId), PaymentRequestEntity.GetPartitionKey(merchantId),
                 PaymentRequestEntity.GetRowKey(paymentRequestId));
         }

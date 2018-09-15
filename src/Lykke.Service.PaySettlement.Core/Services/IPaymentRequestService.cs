@@ -15,8 +15,8 @@ namespace Lykke.Service.PaySettlement.Core.Services
 
         Task<IEnumerable<IPaymentRequest>> GetByTransferToMarketTransactionHash(string transactionHash);
 
-        Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByDueDateAsync(DateTime fromDueDate,
-            DateTime toDueDate, int take, string continuationToken = null);
+        Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetBySettlementCreatedAsync(
+            DateTime from, DateTime to, int take, string continuationToken = null);
 
         Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByMerchantAsync(
             string merchantId, int take, string continuationToken = null);

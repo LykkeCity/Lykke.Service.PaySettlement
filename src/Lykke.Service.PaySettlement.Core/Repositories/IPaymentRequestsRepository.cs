@@ -13,8 +13,8 @@ namespace Lykke.Service.PaySettlement.Core.Repositories
 
         Task<IPaymentRequest> GetByWalletAddressAsync(string walletAddress);
 
-        Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByDueDateAsync(DateTime fromDueDate,
-            DateTime toDueDate, int take, string continuationToken = null);
+        Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetBySettlementCreatedAsync
+        (DateTime from, DateTime to, int take, string continuationToken = null);
 
         Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByMerchantAsync(
             string merchantId, int take, string continuationToken = null);

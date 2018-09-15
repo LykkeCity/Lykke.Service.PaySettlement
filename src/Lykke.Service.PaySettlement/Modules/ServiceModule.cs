@@ -41,9 +41,7 @@ namespace Lykke.Service.PaySettlement.Modules
             builder.RegisterInstance(mapper).As<IMapper>();
 
             RegisterMeClient(builder);
-            builder.RegisterAssetsClient(AssetServiceSettings.Create(
-                new Uri(_appSettings.CurrentValue.AssetsServiceClient.ServiceUrl), 
-                _appSettings.CurrentValue.AssetsServiceClient.ExpirationPeriod));
+            builder.RegisterAssetsClient(_appSettings.CurrentValue.AssetsServiceClient.ServiceUrl);
             RegisterNinja(builder);
             RegisterRepositories(builder);
 

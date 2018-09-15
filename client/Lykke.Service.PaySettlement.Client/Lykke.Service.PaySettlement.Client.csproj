@@ -28,7 +28,7 @@
     <Compile Include="..\..\src\Lykke.Service.PaySettlement\Models\PaymentRequestModel.cs" Link="Models\PaymentRequestModel.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Lykke.HttpClientGenerator" Version="2.1.2" />
+    <PackageReference Include="Lykke.HttpClientGenerator" Version="2.2.0" />
     <PackageReference Include="Lykke.Service.PayInternal.Contract" Version="2.0.4" />
     <PackageReference Include="Lykke.SettingsReader" Version="4.0.1" />
     <PackageReference Include="Refit" Version="4.6.16" />

@@ -54,17 +54,17 @@ namespace Lykke.Service.PaySettlement.Client
         /// <summary>
         /// Returns payment requests.
         /// </summary>
-        /// <param name="fromDueDate">Bottom border of the payment request due date interval.</param>
-        /// <param name="toDueDate">Top border of the payment request due date interval.</param>
+        /// <param name="from">Bottom border of the settlement start interval.</param>
+        /// <param name="to">Top border of the settlement start interval.</param>
         /// <param name="take">Max count of entries in the result.</param>
         /// <param name="continuationToken">Token for next page, pass null for first page.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the work.</param>
         /// <returns code="200">Payment requests.</returns>
         /// <returns code="404">Payment requests are not found.</returns>
         /// <returns code="400">Input arguments are invalid.</returns>
-        [Get("/api/PaymentRequest/GetPaymentRequestsByDueDate/")]
-        Task<ContinuationResult<PaymentRequestModel>> GetPaymentRequestsByDueDateAsync(DateTime fromDueDate, 
-            DateTime toDueDate, int take, string continuationToken = null,
+        [Get("/api/PaymentRequest/GetPaymentRequestsBySettlementCreated/")]
+        Task<ContinuationResult<PaymentRequestModel>> GetPaymentRequestsBySettlementCreatedAsync(
+            DateTime from, DateTime to, int take, string continuationToken = null,
             CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>

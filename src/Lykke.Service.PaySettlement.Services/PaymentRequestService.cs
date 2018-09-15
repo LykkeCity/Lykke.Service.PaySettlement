@@ -42,10 +42,10 @@ namespace Lykke.Service.PaySettlement.Services
             return _paymentRequestsRepository.GetByWalletAddressAsync(walletAddress);
         }
 
-        public Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByDueDateAsync(DateTime fromDueDate,
-            DateTime toDueDate, int take, string continuationToken = null)
+        public Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetBySettlementCreatedAsync(
+            DateTime from, DateTime to, int take, string continuationToken = null)
         {
-            return _paymentRequestsRepository.GetByDueDateAsync(fromDueDate, toDueDate, take, continuationToken);
+            return _paymentRequestsRepository.GetBySettlementCreatedAsync(from, to, take, continuationToken);
         }
 
         public Task<(IEnumerable<IPaymentRequest> Entities, string ContinuationToken)> GetByMerchantAsync(
@@ -55,7 +55,7 @@ namespace Lykke.Service.PaySettlement.Services
         }
 
         public async Task AddAsync(IPaymentRequest paymentRequest)
-        {
+        {            
             await _paymentRequestsRepository.InsertOrReplaceAsync(paymentRequest);
 
             string message = "Payment request is added.";
