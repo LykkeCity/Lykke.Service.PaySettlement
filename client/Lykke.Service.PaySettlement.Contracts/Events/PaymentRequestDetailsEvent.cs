@@ -1,4 +1,5 @@
-﻿using ProtoBuf;
+﻿using Lykke.Service.PayInternal.Contract.PaymentRequest;
+using ProtoBuf;
 using System;
 
 namespace Lykke.Service.PaySettlement.Contracts.Events
@@ -40,9 +41,15 @@ namespace Lykke.Service.PaySettlement.Contracts.Events
         public string WalletAddress { get; set; }
 
         [ProtoMember(12)]
-        public Decimal PaidAmount { get; set; }
+        public PaymentRequestStatus PaymentRequestStatus { get; set; }
 
         [ProtoMember(13)]
+        public Decimal PaidAmount { get; set; }
+
+        [ProtoMember(14)]
         public DateTime? PaidDate { get; set; }
+
+        [ProtoMember(15)]
+        public DateTime PaymentRequestTimestamp { get; set; }
     }
 }

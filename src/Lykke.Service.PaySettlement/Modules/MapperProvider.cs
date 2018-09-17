@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using AutoMapper.Configuration;
+using Lykke.Service.PayInternal.Client.Models.PaymentRequest;
 using Lykke.Service.PayInternal.Contract.PaymentRequest;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Domain;
+using Lykke.Service.PaySettlement.Cqrs;
 using PaymentRequest = Lykke.Service.PaySettlement.Core.Domain.PaymentRequest;
 
 namespace Lykke.Service.PaySettlement.Modules
@@ -26,13 +28,14 @@ namespace Lykke.Service.PaySettlement.Modules
         private void CreateRabbitMaps(MapperConfigurationExpression mce)
         {
             mce.CreateMap<PaymentRequestDetailsMessage, PaymentRequestDetailsEvent>(MemberList.Destination)
-                .ForMember(d => d.PaymentRequestId, e => e.MapFrom(s => s.Id));
+                .ForMember(d => d.PaymentRequestId, e => e.MapFrom(s => s.Id))
+                .ForMember(d => d.PaymentRequestStatus, e => e.MapFrom(s => s.Status))
+                .ForMember(d => d.PaymentRequestTimestamp, e => e.MapFrom(s => s.Timestamp));
 
             mce.CreateMap<PaymentRequestDetailsEvent, CreateSettlementCommand>();
 
             mce.CreateMap<CreateSettlementCommand, PaymentRequest>(MemberList.Destination)
-                .ForMember(d => d.PaymentRequestStatus, e => e.Ignore())
-                .ForMember(d => d.PaymentRequestTimestamp, e => e.Ignore())
+                .ForMember(d => d.PaymentRequestStatus, e => e.MapFrom(s=>s.PaymentRequestStatus))
                 .ForMember(d => d.TransferToMarketTransactionHash, e => e.Ignore())
                 .ForMember(d => d.TransferToMarketTransactionFee, e => e.Ignore())
                 .ForMember(d => d.SettlementCreatedUtc, e => e.Ignore())
