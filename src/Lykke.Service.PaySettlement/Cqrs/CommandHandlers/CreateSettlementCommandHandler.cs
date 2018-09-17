@@ -88,11 +88,6 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 
         private bool ValidateCommand(CreateSettlementCommand command)
         {
-            if (command.PaymentRequestStatus != PaymentRequestStatus.Confirmed)
-            {
-                return false;
-            }
-
             if (!_assetService.IsPaymentAssetIdValid(command.PaymentAssetId))
             {
                 _log.Info($"Skip payment request because payment assetId is {command.PaymentAssetId}.", new
