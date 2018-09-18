@@ -82,7 +82,7 @@ namespace Lykke.Service.PaySettlement.Modules
                     new RabbitMqTransportFactory(logFactory));
 
                 return new CqrsEngine(logFactory,
-                    ctx.Resolve<IDependencyResolver>(),
+                    new AutofacDependencyResolver(ctx.Resolve<IComponentContext>()),
                     messagingEngine,
                     new DefaultEndpointProvider(),
                     true,
@@ -92,7 +92,7 @@ namespace Lykke.Service.PaySettlement.Modules
                         environment: _appSettings.CurrentValue.PaySettlementService.CqrsEnvironment)),
 
                     Register.BoundedContext(SettlementBoundedContext)
-                        .PublishingEvents(typeof(PaymentRequestDetailsEvent))
+                        .PublishingEvents(typeof(PaymentRequestConfirmedEvent))
                         .With(EventsRoute)
                         .WithProcess<PaymentRequestsSubscriber>()
 
@@ -130,12 +130,12 @@ namespace Lykke.Service.PaySettlement.Modules
 
                     Register.Saga<SettlementSaga>("lykkepay-settlement-saga")
                         .PublishingCommands(typeof(CreateSettlementCommand),
-                            typeof(TransferToMarketCommand), 
-                            typeof(ExchangeCommand), 
+                            typeof(TransferToMarketCommand),
+                            typeof(ExchangeCommand),
                             typeof(TransferToMerchantCommand))
                         .To(SettlementBoundedContext).With(CommandsRoute)
 
-                        .ListeningEvents(typeof(PaymentRequestDetailsEvent),
+                        .ListeningEvents(typeof(PaymentRequestConfirmedEvent),
                             typeof(SettlementCreatedEvent),
                             typeof(SettlementExchangedEvent))
                         .From(SettlementBoundedContext).On(EventsRoute)
@@ -161,7 +161,9 @@ namespace Lykke.Service.PaySettlement.Modules
                 .WithParameter("settings", _appSettings.CurrentValue.PaySettlementService.PaymentRequestsSubscriber);
 
             builder.RegisterType<CreateSettlementCommandHandler>();
+
             builder.RegisterType<TransferToMarketCommandHandler>();
+
             builder.RegisterType<TransferToMarketProcess>()
                 .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.TransferToMarketInterval)
                 .AsSelf()
@@ -169,7 +171,11 @@ namespace Lykke.Service.PaySettlement.Modules
                 .As<IStopable>()
                 .AutoActivate()
                 .SingleInstance();
-            builder.RegisterType<ExchangeCommandHandler>();
+
+            builder.RegisterType<ExchangeCommandHandler>()
+                .WithParameter("multisigWalletAddress", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService.MultisigWalletAddress)
+                .WithParameter("settings", _appSettings.CurrentValue.CqrsBlockchainCashinDetector);
+
             builder.RegisterType<ExchangeProcess>()
                 .WithParameter("interval", _appSettings.CurrentValue.PaySettlementService.ExchangeInterval)
                 .AsSelf()
@@ -177,12 +183,11 @@ namespace Lykke.Service.PaySettlement.Modules
                 .As<IStopable>()
                 .AutoActivate()
                 .SingleInstance();
+
             builder.RegisterType<TransferToMerchantCommandHandler>();
             
             builder.RegisterType<SettlementSaga>()
-                .WithParameter("multisigWalletAddress", _appSettings.CurrentValue.PaySettlementService.TransferToMarketService.MultisigWalletAddress)
-                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId)
-                .WithParameter("settings", _appSettings.CurrentValue.CqrsBlockchainCashinDetector);
+                .WithParameter("clientId", _appSettings.CurrentValue.PaySettlementService.ClientId);
         }
     }
 }

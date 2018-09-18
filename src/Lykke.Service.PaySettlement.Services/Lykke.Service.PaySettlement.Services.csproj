@@ -6,6 +6,8 @@
     <Version>1.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Lykke.Cqrs" Version="6.0.0" />
+    <PackageReference Include="Lykke.Sdk" Version="5.3.1" />
     <PackageReference Include="Lykke.Service.ExchangeOperations.Client" Version="1.2.2" />
   </ItemGroup>
   <ItemGroup>

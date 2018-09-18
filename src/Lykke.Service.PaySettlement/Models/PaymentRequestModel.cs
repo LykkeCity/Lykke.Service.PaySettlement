@@ -17,10 +17,8 @@ namespace Lykke.Service.PaySettlement.Models
         public int MarkupPips { get; set; }
         public double MarkupFixedFee { get; set; }
         public string WalletAddress { get; set; }
-        public PaymentRequestStatus PaymentRequestStatus { get; set; }
         public Decimal PaidAmount { get; set; }
         public DateTime? PaidDate { get; set; }
-        public DateTime PaymentRequestTimestamp { get; set; }
 
         public DateTime SettlementCreatedUtc { get; set; }
         public SettlementStatus SettlementStatus { get; set; }

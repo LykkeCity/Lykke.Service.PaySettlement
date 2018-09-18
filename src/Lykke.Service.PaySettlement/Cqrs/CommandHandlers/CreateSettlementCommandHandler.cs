@@ -4,18 +4,17 @@ using JetBrains.Annotations;
 using Lykke.Common.ApiLibrary.Exceptions;
 using Lykke.Common.Log;
 using Lykke.Cqrs;
-using Lykke.Service.PayInternal.Contract.PaymentRequest;
 using Lykke.Service.PayMerchant.Client;
 using Lykke.Service.PayMerchant.Client.Models;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
+using Lykke.Service.PaySettlement.Cqrs.Helpers;
 using Lykke.Service.PaySettlement.Models.Exceptions;
 using System;
 using System.Net;
 using System.Threading.Tasks;
-using Lykke.Service.PaySettlement.Cqrs.Helpers;
 
 namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 {
@@ -88,11 +87,6 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 
         private bool ValidateCommand(CreateSettlementCommand command)
         {
-            if (command.PaymentRequestStatus != PaymentRequestStatus.Confirmed)
-            {
-                return false;
-            }
-
             if (!_assetService.IsPaymentAssetIdValid(command.PaymentAssetId))
             {
                 _log.Info($"Skip payment request because payment assetId is {command.PaymentAssetId}.", new

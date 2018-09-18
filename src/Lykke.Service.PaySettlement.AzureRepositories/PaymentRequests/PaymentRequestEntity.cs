@@ -82,9 +82,6 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
 
         public string WalletAddress { get; set; }
 
-        [JsonConverter(typeof(StringEnumConverter))]
-        public PaymentRequestStatus PaymentRequestStatus { get; set; }
-
         private Decimal _paidAmount;
         public Decimal PaidAmount
         {
@@ -97,17 +94,6 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         }
 
         public DateTime? PaidDate { get; set; }
-
-        private DateTime _paymentRequestTimestamp;
-        public DateTime PaymentRequestTimestamp
-        {
-            get => _paymentRequestTimestamp;
-            set
-            {
-                _paymentRequestTimestamp = value;
-                MarkValueTypePropertyAsDirty(nameof(PaymentRequestTimestamp));
-            }
-        }
 
 
         private DateTime _settlementCreatedUtc;
@@ -224,10 +210,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             MarkupPips = paymentRequest.MarkupPips;
             MarkupFixedFee = paymentRequest.MarkupFixedFee;
             WalletAddress = paymentRequest.WalletAddress;
-            PaymentRequestStatus = paymentRequest.PaymentRequestStatus;
             PaidAmount = paymentRequest.PaidAmount;
             PaidDate = paymentRequest.PaidDate;
-            PaymentRequestTimestamp = paymentRequest.PaymentRequestTimestamp;
 
             SettlementCreatedUtc = paymentRequest.SettlementCreatedUtc;
             SettlementStatus = paymentRequest.SettlementStatus;

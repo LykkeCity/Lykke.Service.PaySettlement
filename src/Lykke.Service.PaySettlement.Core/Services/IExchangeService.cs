@@ -6,7 +6,7 @@ namespace Lykke.Service.PaySettlement.Core.Services
     public interface IExchangeService
     {
         Task<IExchangeOrder> AddToQueueAsync(IPaymentRequest paymentRequest,
-            decimal totalTransacionAmount, decimal transacionFee);
+            decimal transferredAmount);
 
         Task<ExchangeResult> ExchangeAsync();
     }

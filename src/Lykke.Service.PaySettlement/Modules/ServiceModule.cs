@@ -20,6 +20,7 @@ using Lykke.SettingsReader;
 using QBitNinja.Client;
 using System;
 using System.Net;
+using Lykke.Sdk;
 using Lykke.Service.PaySettlement.Core.Repositories;
 
 namespace Lykke.Service.PaySettlement.Modules
@@ -44,6 +45,10 @@ namespace Lykke.Service.PaySettlement.Modules
             builder.RegisterAssetsClient(_appSettings.CurrentValue.AssetsServiceClient.ServiceUrl);
             RegisterNinja(builder);
             RegisterRepositories(builder);
+
+            builder.RegisterType<StartupManager>()
+                .As<IStartupManager>()
+                .SingleInstance();
 
             builder.RegisterInstance<IExchangeOperationsServiceClient>(new ExchangeOperationsServiceClient(
                 _appSettings.CurrentValue.ExchangeOperationsServiceClient.ServiceUrl));

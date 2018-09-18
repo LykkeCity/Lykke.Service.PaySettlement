@@ -1,4 +1,5 @@
-﻿using ProtoBuf;
+﻿using System;
+using ProtoBuf;
 
 namespace Lykke.Service.PaySettlement.Contracts.Commands
 {
@@ -6,9 +7,21 @@ namespace Lykke.Service.PaySettlement.Contracts.Commands
     public class ExchangeCommand
     {
         [ProtoMember(1, IsRequired = true)]
-        public string TransactionHash { get; set; }
+        public Guid OperationId { get; set; }
 
         [ProtoMember(2, IsRequired = true)]
-        public decimal TransactionFee { get; set; }
+        public string AssetId { get; set; }
+
+        [ProtoMember(3, IsRequired = true)]
+        public Decimal Amount { get; set; }
+
+        [ProtoMember(4, IsRequired = true)]
+        public Decimal TransactionAmount { get; set; }
+
+        [ProtoMember(5, IsRequired = true)]
+        public Decimal TransactionFee { get; set; }
+
+        [ProtoMember(6, IsRequired = true)]
+        public string TransactionHash { get; set; }
     }
 }

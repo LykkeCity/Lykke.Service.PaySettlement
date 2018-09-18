@@ -31,12 +31,10 @@ namespace Lykke.Service.PaySettlement.Contracts.Commands
 
         [ProtoMember(11)] public string WalletAddress { get; set; }
 
-        [ProtoMember(12)] public PaymentRequestStatus PaymentRequestStatus { get; set; }
+        [ProtoMember(12)] public Decimal PaidAmount { get; set; }
 
-        [ProtoMember(13)] public Decimal PaidAmount { get; set; }
+        [ProtoMember(13)] public DateTime? PaidDate { get; set; }
 
-        [ProtoMember(14)] public DateTime? PaidDate { get; set; }
-
-        [ProtoMember(15)] public DateTime PaymentRequestTimestamp { get; set; }
+        [ProtoMember(14)] public DateTime PaymentRequestTimestamp { get; set; }
     }
 }

@@ -68,8 +68,11 @@ namespace Lykke.Service.PaySettlement.Rabbit
 
         private Task ProcessMessageAsync(PaymentRequestDetailsMessage message)
         {
-            var paymentRequestDetailsEvent = _mapper.Map<PaymentRequestDetailsEvent>(message);
-            _eventPublisher.PublishEvent(paymentRequestDetailsEvent);
+            if (message.Status == PaymentRequestStatus.Confirmed)
+            {
+                var paymentRequestConfirmedEvent = _mapper.Map<PaymentRequestConfirmedEvent>(message);
+                _eventPublisher.PublishEvent(paymentRequestConfirmedEvent);
+            }
 
             return Task.CompletedTask;
         }

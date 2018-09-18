@@ -39,7 +39,7 @@ namespace Lykke.Service.PaySettlement.Services
         }
 
         public async Task<IExchangeOrder> AddToQueueAsync(IPaymentRequest paymentRequest,
-            decimal totalTransacionAmount, decimal transacionFee)
+            decimal transferredAmount)
         {
             AssetPair assetPair = _assetService.GetAssetPair(paymentRequest.PaymentAssetId,
                 paymentRequest.SettlementAssetId);
@@ -49,9 +49,7 @@ namespace Lykke.Service.PaySettlement.Services
                 ? OrderAction.Sell
                 : OrderAction.Buy;
 
-            decimal marketAmount = paymentRequest.PaidAmount -
-                                   paymentRequest.PaidAmount * transacionFee / totalTransacionAmount;
-            marketAmount = marketAmount.TruncateDecimalPlaces(IsStraight(orderAction)
+            decimal marketAmount = transferredAmount.TruncateDecimalPlaces(IsStraight(orderAction)
                 ? assetPair.InvertedAccuracy
                 : assetPair.Accuracy);
 
