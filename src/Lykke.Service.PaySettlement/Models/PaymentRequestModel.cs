@@ -1,5 +1,4 @@
-﻿using Lykke.Service.PayInternal.Contract.PaymentRequest;
-using Lykke.Service.PaySettlement.Core.Domain;
+﻿using Lykke.Service.PaySettlement.Core.Domain;
 using System;
 
 namespace Lykke.Service.PaySettlement.Models

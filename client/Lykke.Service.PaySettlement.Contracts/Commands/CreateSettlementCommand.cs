@@ -1,5 +1,4 @@
-﻿using Lykke.Service.PayInternal.Contract.PaymentRequest;
-using ProtoBuf;
+﻿using ProtoBuf;
 using System;
 
 namespace Lykke.Service.PaySettlement.Contracts.Commands
