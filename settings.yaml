@@ -14,7 +14,7 @@ PaySettlementService:
             settings-key: RabbitPay
             types: [ RabbitMq, Tag ]
         ExchangeName: 
-            settings-key: PaySettlementService-PaymentRequestsSubscriber-ExchangeName
+            settings-key: LykkePay-PaymentRequestsExchangeName
             types: [ Tag ]
         QueueName: 
             settings-key: PaySettlementService-PaymentRequestsSubscriber-QueueName

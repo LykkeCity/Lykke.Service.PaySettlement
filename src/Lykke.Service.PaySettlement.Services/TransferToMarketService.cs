@@ -7,6 +7,7 @@ using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
 using Lykke.Service.PaySettlement.Core.Settings;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Lykke.Service.PaySettlement.Core.Repositories;
@@ -54,7 +55,8 @@ namespace Lykke.Service.PaySettlement.Services
                 var transferRequest = new BtcFreeTransferRequest()
                 {
                     DestAddress = _settings.MultisigWalletAddress,
-                    Sources = messages.Select(m => new BtcTransferSourceInfo
+                    Sources = messages.Distinct(new TransferToMarketMessageEqualityComparer())
+                        .Select(m => new BtcTransferSourceInfo
                     {
                         Address = m.PaymentRequestWalletAddress,
                         Amount = m.Amount
