@@ -63,12 +63,12 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             catch (SettlementException ex)
             {
                 await TryAddPaymentRequestWithErrorAsync(paymentRequest, ex.Message, publisher);
-                await _errorProcessHelper.ProcessErrorAsync(command, publisher, false,  ex);
+                await _errorProcessHelper.ProcessErrorAsync(command, publisher, false, ex);
                 return;
             }
             catch (Exception ex)
             {
-                await TryAddPaymentRequestWithErrorAsync(paymentRequest, 
+                await TryAddPaymentRequestWithErrorAsync(paymentRequest,
                     "Unknown error has occured on validating.", publisher);
                 await _errorProcessHelper.ProcessErrorAsync(command, publisher, false, ex);
                 throw;
@@ -112,10 +112,10 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             {
                 _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less then " +
                           $"{nameof(paymentAsset.CashoutMinimalAmount)} ({paymentAsset.CashoutMinimalAmount}).", new
-                {
-                    command.MerchantId,
-                    command.PaymentRequestId
-                });
+                          {
+                              command.MerchantId,
+                              command.PaymentRequestId
+                          });
                 return false;
             }
 
@@ -123,27 +123,38 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             {
                 _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less then " +
                           $"{nameof(paymentAsset.CashinMinimalAmount)} ({paymentAsset.CashinMinimalAmount}).", new
-                {
-                    command.MerchantId,
-                    command.PaymentRequestId
-                });
+                          {
+                              command.MerchantId,
+                              command.PaymentRequestId
+                          });
                 return false;
             }
 
-            if ((decimal?)paymentAsset.LowVolumeAmount > command.PaidAmount)
+            if ((decimal?)paymentAsset.LowVolumeAmount >= command.PaidAmount)
             {
-                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less then " +
+                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less or equals then " +
                           $"{nameof(paymentAsset.LowVolumeAmount)} ({paymentAsset.LowVolumeAmount}).", new
-                {
-                    command.MerchantId,
-                    command.PaymentRequestId
-                });
+                          {
+                              command.MerchantId,
+                              command.PaymentRequestId
+                          });
+                return false;
+            }
+
+            if ((decimal?)paymentAsset.DustLimit >= command.PaidAmount)
+            {
+                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less or equals then " +
+                          $"{nameof(paymentAsset.DustLimit)} ({paymentAsset.DustLimit}).", new
+                          {
+                              command.MerchantId,
+                              command.PaymentRequestId
+                          });
                 return false;
             }
 
             return true;
         }
-       
+
         private async Task<string> GetMerchantClientIdAsync(CreateSettlementCommand command)
         {
             try
@@ -172,7 +183,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             return true;
         }
 
-        private async Task TryAddPaymentRequestWithErrorAsync(IPaymentRequest paymentRequest, 
+        private async Task TryAddPaymentRequestWithErrorAsync(IPaymentRequest paymentRequest,
             string errorMessage, IEventPublisher publisher)
         {
             if (paymentRequest == null)
@@ -192,7 +203,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
         }
 
-        private async Task AddPaymentRequestAsync(IPaymentRequest paymentRequest, 
+        private async Task AddPaymentRequestAsync(IPaymentRequest paymentRequest,
             IEventPublisher publisher)
         {
             await _paymentRequestService.AddAsync(paymentRequest);
