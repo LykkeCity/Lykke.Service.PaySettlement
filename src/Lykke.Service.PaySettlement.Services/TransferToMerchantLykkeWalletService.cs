@@ -91,7 +91,7 @@ namespace Lykke.Service.PaySettlement.Services
                 return true;
             }
 
-            string errorMessage = $"There is not enought balance of {message.SettlementAssetId}. " +
+            string errorMessage = $"There is not enough balance of {message.SettlementAssetId}. " +
                                   $"Required volume is {amount}. Balance is {balance}.";
 
             _log.Error(null, errorMessage, new
