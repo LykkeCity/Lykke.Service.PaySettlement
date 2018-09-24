@@ -48,7 +48,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             {
                 paymentRequest = _mapper.Map<PaymentRequest>(command);
 
-                if (!ValidateCommand(command))
+                if (!await ValidateCommandAsync(command))
                 {
                     return;
                 }
@@ -85,7 +85,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
         }
 
-        private bool ValidateCommand(CreateSettlementCommand command)
+        private async Task<bool> ValidateCommandAsync(CreateSettlementCommand command)
         {
             if (!_assetService.IsPaymentAssetIdValid(command.PaymentAssetId))
             {
@@ -149,6 +149,28 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                               command.MerchantId,
                               command.PaymentRequestId
                           });
+                return false;
+            }
+
+            if (null != await _paymentRequestService.GetAsync(command.MerchantId, command.PaymentRequestId))
+            {
+                _log.Info("Skip payment request because payment request with " +
+                          $"{nameof(command.MerchantId)} = {command.MerchantId} " +
+                          $"and {nameof(command.PaymentRequestId)} = {command.PaymentRequestId}.", new
+                {
+                    command.MerchantId,
+                    command.PaymentRequestId
+                });
+                return false;
+            }
+
+            if (string.IsNullOrEmpty(command.WalletAddress))
+            {
+                _log.Info($"Skip payment request because {nameof(command.WalletAddress)} is empty.", new
+                {
+                    command.MerchantId,
+                    command.PaymentRequestId
+                });
                 return false;
             }
 

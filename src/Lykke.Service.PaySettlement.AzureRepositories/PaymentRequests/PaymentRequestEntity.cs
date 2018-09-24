@@ -47,8 +47,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             }
         }
 
-        private double _markupPercent;
-        public double MarkupPercent
+        private decimal _markupPercent;
+        public decimal MarkupPercent
         {
             get => _markupPercent;
             set
@@ -69,8 +69,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             }
         }
 
-        private double _markupFixedFee;
-        public double MarkupFixedFee
+        private decimal _markupFixedFee;
+        public decimal MarkupFixedFee
         {
             get => _markupFixedFee;
             set

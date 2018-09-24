@@ -28,13 +28,13 @@ namespace Lykke.Service.PaySettlement.Contracts.Events
         public DateTime DueDate { get; set; }
 
         [ProtoMember(8)]
-        public double MarkupPercent { get; set; }
+        public Decimal MarkupPercent { get; set; }
 
         [ProtoMember(9)]
         public int MarkupPips { get; set; }
 
         [ProtoMember(10)]
-        public double MarkupFixedFee { get; set; }
+        public Decimal MarkupFixedFee { get; set; }
 
         [ProtoMember(11)]
         public string WalletAddress { get; set; }

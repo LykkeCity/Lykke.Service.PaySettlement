@@ -10,9 +10,9 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         string SettlementAssetId { get; }
         string PaymentAssetId { get; }
         DateTime DueDate { get; }
-        double MarkupPercent { get; }
+        decimal MarkupPercent { get; }
         int MarkupPips { get; }
-        double MarkupFixedFee { get; }
+        decimal MarkupFixedFee { get; }
         string WalletAddress { get; }
         decimal PaidAmount { get; }
         DateTime? PaidDate { get; }

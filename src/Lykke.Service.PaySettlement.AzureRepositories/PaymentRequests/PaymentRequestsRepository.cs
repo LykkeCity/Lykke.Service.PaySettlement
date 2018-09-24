@@ -40,11 +40,6 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
             var index = await _indexByTransferToMarketTransactionHash.GetDataAsync(
                 IndexByTransferToMarketTransactionHash.GeneratePartitionKey(transactionHash));
 
-            if (index == null)
-            {
-                return null;
-            }
-
             return await _storage.GetDataAsync(index);
         }
 
@@ -52,11 +47,6 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         {
             var index = await _indexByWalletAddress.GetDataAsync(
                 IndexByWalletAddress.GeneratePartitionKey(walletAddress), IndexByWalletAddress.GenerateRowKey());
-
-            if (index == null)
-            {
-                return null;
-            }
 
             return await _storage.GetDataAsync(index);
         }
