@@ -45,6 +45,7 @@ namespace Lykke.Service.PaySettlement.Services
         private async Task<TransferBatchPaymentRequestsResult> TransferBatchPaymentRequestsAsync(
             TransferToMarketMessage[] messages)
         {
+            BtcFreeTransferRequest transferRequest = null;
             try
             {
                 if (!messages.Any())
@@ -52,7 +53,7 @@ namespace Lykke.Service.PaySettlement.Services
                     return new TransferBatchPaymentRequestsResult {IsSuccess = true};
                 }
 
-                var transferRequest = new BtcFreeTransferRequest()
+                transferRequest = new BtcFreeTransferRequest()
                 {
                     DestAddress = _settings.MultisigWalletAddress,
                     Sources = messages.Distinct(new TransferToMarketMessageEqualityComparer())
@@ -78,7 +79,14 @@ namespace Lykke.Service.PaySettlement.Services
             }
             catch (Exception ex)
             {
-                _log.Error(ex, $"Unknown error has occured on transferring: {messages.ToJson()}");
+                if (transferRequest != null)
+                {
+                    _log.Error(ex, $"Unknown error has occured on transferring: {transferRequest.ToJson()}");
+                }
+                else
+                {                
+                    _log.Error(ex, $"Unknown error has occured on transferring: {messages.ToJson()}");
+                }
 
                 return new TransferBatchPaymentRequestsResult
                 {
