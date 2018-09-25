@@ -1,6 +1,5 @@
 ﻿using JetBrains.Annotations;
 using Lykke.Sdk.Settings;
-using Lykke.Service.Assets.Client;
 using Lykke.Service.Balances.Client;
 using Lykke.Service.PayInternal.Client;
 using Lykke.Service.PayMerchant.Client;

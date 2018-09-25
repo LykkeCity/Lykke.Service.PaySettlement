@@ -33,7 +33,7 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         public string MerchantClientId { get; set; }
         public DateTime? TransferedToMerchantUtc { get; set; }
 
-        public bool Error { get; set; }
+        public SettlementProcessingError Error { get; set; }
         public string ErrorDescription { get; set; }
     }
 }

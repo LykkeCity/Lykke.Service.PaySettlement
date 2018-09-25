@@ -117,7 +117,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 PaymentRequestEntity.GetRowKey(id), r =>
                 {
                     r.SettlementStatus = SettlementStatus.TransferToMarketQueued;
-                    r.Error = false;
+                    r.Error = SettlementProcessingError.None;
                     r.ErrorDescription = string.Empty;
                     return r;
                 });
@@ -133,7 +133,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                 {
                     r.TransferToMarketTransactionHash = transactionHash;
                     r.SettlementStatus = SettlementStatus.TransferringToMarket;
-                    r.Error = false;
+                    r.Error = SettlementProcessingError.None;
                     r.ErrorDescription = string.Empty;
                     return r;
                 });
@@ -155,7 +155,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                     r.TransferToMarketTransactionFee = transactionFee;
                     r.TransferedToMarketUtc = DateTime.UtcNow;
                     r.SettlementStatus = SettlementStatus.ExchangeQueued;
-                    r.Error = false;
+                    r.Error = SettlementProcessingError.None;
                     r.ErrorDescription = string.Empty;
                     return r;
                 });
@@ -171,7 +171,7 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                     r.MarketPrice = marketPrice;
                     r.ExchangedUtc = DateTime.UtcNow;
                     r.SettlementStatus = SettlementStatus.Exchanged;
-                    r.Error = false;
+                    r.Error = SettlementProcessingError.None;
                     r.ErrorDescription = string.Empty;
                     return r;
                 });
@@ -186,19 +186,19 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
                     r.SettlementStatus = SettlementStatus.TransferredToMerchant;
                     r.TransferredAmount = transferredAmount;
                     r.TransferedToMerchantUtc = DateTime.UtcNow;
-                    r.Error = false;
+                    r.Error = SettlementProcessingError.None;
                     r.ErrorDescription = string.Empty;
                     return r;
                 });
         }
 
-        public async Task<IPaymentRequest> SetErrorAsync(string merchantId, string id, 
-            string errorDescription = null)
+        public async Task<IPaymentRequest> SetErrorAsync(string merchantId, string id,
+            SettlementProcessingError error, string errorDescription = null)
         {
             return await _storage.MergeAsync(PaymentRequestEntity.GetPartitionKey(merchantId),
                 PaymentRequestEntity.GetRowKey(id), r =>
                 {
-                    r.Error = true;
+                    r.Error = error;
                     r.ErrorDescription = errorDescription;
                     return r;
                 });

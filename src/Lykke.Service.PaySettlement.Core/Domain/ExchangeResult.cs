@@ -1,12 +1,16 @@
-﻿namespace Lykke.Service.PaySettlement.Core.Domain
+﻿using System;
+
+namespace Lykke.Service.PaySettlement.Core.Domain
 {
     public class ExchangeResult : PaymentRequestIdentifier
     {
-        public bool IsSuccess { get; set; }
-
         public bool CanBeRetried { get; set; }
 
+        public SettlementProcessingError Error { get; set; }
+
         public string ErrorMessage { get; set; }
+
+        public Exception Exception { get; set; }
 
         public decimal MarketPrice { get; set; }
 

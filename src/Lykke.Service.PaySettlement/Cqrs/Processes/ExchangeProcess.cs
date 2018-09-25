@@ -9,6 +9,7 @@ using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Lykke.Service.PaySettlement.Cqrs.Helpers;
+using Lykke.Service.PaySettlement.Models.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Processes
 {
@@ -61,7 +62,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
                 return;
             }
 
-            if (result.IsSuccess)
+            if (result.Error == SettlementProcessingError.None)
             {
                 await _paymentRequestService.SetExchangedAsync(result.MerchantId, 
                     result.PaymentRequestId, result.MarketPrice, result.MarketOrderId);
@@ -77,8 +78,9 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
             }
             else
             {
-                await _errorProcessHelper.ProcessErrorAsync(result.MerchantId, result.PaymentRequestId, 
-                    _eventPublisher, true, result.ErrorMessage);
+                var settlementException = new SettlementException(result.MerchantId, result.PaymentRequestId,
+                    result.Error, result.ErrorMessage, result.Exception);
+                await _errorProcessHelper.ProcessErrorAsync(settlementException, _eventPublisher, true);
             }
         }
     }

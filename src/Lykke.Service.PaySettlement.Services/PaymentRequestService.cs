@@ -59,9 +59,13 @@ namespace Lykke.Service.PaySettlement.Services
             await _paymentRequestsRepository.InsertOrReplaceAsync(paymentRequest);
 
             string message = "Payment request is added.";
-            if (paymentRequest.Error)
+            if (paymentRequest.Error != SettlementProcessingError.None)
             {
-                message += $"\r\n With error: {paymentRequest.ErrorDescription}";
+                message += $"\r\n With error: {paymentRequest.Error}";
+            }
+            if (!string.IsNullOrEmpty(paymentRequest.ErrorDescription))
+            {
+                message += $"\r\n Error description: {paymentRequest.ErrorDescription}";
             }
 
             _log.Info(message, new
@@ -149,11 +153,11 @@ namespace Lykke.Service.PaySettlement.Services
             return paymentRequest;
         }
 
-        public async Task<IPaymentRequest> SetErrorAsync(string merchantId, string id, 
-            string errorDescription)
+        public async Task<IPaymentRequest> SetErrorAsync(string merchantId, string id,
+            SettlementProcessingError error, string errorDescription = null)
         {
             var paymentRequest = await _paymentRequestsRepository.SetErrorAsync(merchantId, id,
-                errorDescription);
+                error, errorDescription);
 
             return paymentRequest;
         }

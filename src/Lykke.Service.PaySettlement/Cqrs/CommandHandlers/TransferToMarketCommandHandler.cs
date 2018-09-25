@@ -51,9 +51,8 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
             catch (Exception ex)
             {
-                await _errorProcessHelper.ProcessErrorAsync(command, publisher, true,
-                    "Unknown error has occured on adding to transfer to market queue.", ex);
-
+                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, true, ex, 
+                    "Unknown error has occured on adding to transfer to market queue.");
                 throw;
             }
         }

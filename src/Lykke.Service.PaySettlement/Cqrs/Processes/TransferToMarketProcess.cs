@@ -10,6 +10,7 @@ using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
 using Lykke.Service.PaySettlement.Cqrs.Helpers;
+using Lykke.Service.PaySettlement.Models.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Processes
 {
@@ -81,8 +82,11 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
                 }
                 else
                 {
-                    await _errorProcessHelper.ProcessErrorAsync(paymentRequestIdentifier.MerchantId,
-                        paymentRequestIdentifier.PaymentRequestId, _eventPublisher, true, result.ErrorMessage);
+                    var settlementException = new SettlementException(paymentRequestIdentifier.MerchantId,
+                        paymentRequestIdentifier.PaymentRequestId,
+                        SettlementProcessingError.Unknown, result.ErrorMessage, result.Exception);
+
+                    await _errorProcessHelper.ProcessErrorAsync(settlementException, _eventPublisher, true);
                 }
             }
         }

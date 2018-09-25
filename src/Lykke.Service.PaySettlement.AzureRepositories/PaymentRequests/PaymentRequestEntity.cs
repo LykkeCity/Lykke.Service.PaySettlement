@@ -203,8 +203,8 @@ namespace Lykke.Service.PaySettlement.AzureRepositories.PaymentRequests
         }
 
 
-        private bool _error;
-        public bool Error
+        private SettlementProcessingError _error;
+        public SettlementProcessingError Error
         {
             get => _error;
             set
