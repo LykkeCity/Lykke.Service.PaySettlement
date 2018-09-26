@@ -10,6 +10,6 @@
         NoLiquidityForExchange = 5,
         ExchangeLeadToNegativeSpread = 6,
         NoTransactionDetails = 7,
-        LowPaidAmount = 8,
+        LowAmount = 8,
     }
 }

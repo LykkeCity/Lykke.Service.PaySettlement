@@ -63,7 +63,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 if (!ValidateMinAmount(paymentRequest, out string validateMessage))
                 {
                     var settlemenetException = new SettlementException(paymentRequest.MerchantId,
-                        paymentRequest.PaymentRequestId, SettlementProcessingError.LowPaidAmount, 
+                        paymentRequest.PaymentRequestId, SettlementProcessingError.LowAmount, 
                         validateMessage);
 
                     await TryAddPaymentRequestWithErrorAsync(paymentRequest,
