@@ -170,7 +170,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 {
                     var settlementException = new SettlementException(paymentRequest.MerchantId,
                         paymentRequest.PaymentRequestId, error, errorMessage, innerException);
-                    await _errorProcessHelper.ProcessErrorAsync(settlementException, publisher, true);
+                    await _errorProcessHelper.ProcessErrorAsync(settlementException, publisher);
                 }
             }
             catch (Exception ex)

@@ -80,7 +80,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
             {
                 var settlementException = new SettlementException(result.MerchantId, result.PaymentRequestId,
                     result.Error, result.ErrorMessage, result.Exception);
-                await _errorProcessHelper.ProcessErrorAsync(settlementException, _eventPublisher, true);
+                await _errorProcessHelper.ProcessErrorAsync(settlementException, _eventPublisher);
             }
         }
     }

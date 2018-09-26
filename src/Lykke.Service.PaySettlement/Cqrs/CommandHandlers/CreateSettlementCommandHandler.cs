@@ -59,20 +59,31 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 {
                     return;
                 }
+
+                if (!ValidateMinAmount(paymentRequest, out string validateMessage))
+                {
+                    var settlemenetException = new SettlementException(paymentRequest.MerchantId,
+                        paymentRequest.PaymentRequestId, SettlementProcessingError.LowPaidAmount, 
+                        validateMessage);
+
+                    await TryAddPaymentRequestWithErrorAsync(paymentRequest,
+                        settlemenetException.Error, publisher);
+                    await _errorProcessHelper.ProcessErrorAsync(settlemenetException, publisher);
+                    return;
+                }
             }
             catch (SettlementException ex)
             {
-                await TryAddPaymentRequestWithErrorAsync(paymentRequest, ex.Error, ex.Message, publisher);
-                await _errorProcessHelper.ProcessErrorAsync(ex, publisher, false);
+                await TryAddPaymentRequestWithErrorAsync(paymentRequest, ex.Error, publisher);
+                await _errorProcessHelper.ProcessErrorAsync(ex, publisher);
                 return;
             }
             catch (Exception ex)
             {
-                string errorMessage = "Unknown error has occured on validating.";
-                await TryAddPaymentRequestWithErrorAsync(paymentRequest, SettlementProcessingError.Unknown, 
-                    errorMessage, publisher);
-                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, false, ex,
-                    errorMessage);
+                await TryAddPaymentRequestWithErrorAsync(paymentRequest, 
+                    SettlementProcessingError.Unknown, publisher);
+                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, ex,
+                    "Unknown error has occured on validating.");
                 throw;
             }
 
@@ -82,7 +93,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
             catch (Exception ex)
             {
-                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, false, ex,
+                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, ex,
                     "Unknown error has occured on adding payment request.");
                 throw;
             }
@@ -110,56 +121,9 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 return false;
             }
 
-            var paymentAsset = _assetService.GetAsset(command.PaymentAssetId);
-            if ((decimal)paymentAsset.CashoutMinimalAmount > command.PaidAmount)
-            {
-                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less then " +
-                          $"{nameof(paymentAsset.CashoutMinimalAmount)} ({paymentAsset.CashoutMinimalAmount}).", new
-                          {
-                              command.MerchantId,
-                              command.PaymentRequestId
-                          });
-                return false;
-            }
-
-            if ((decimal)paymentAsset.CashinMinimalAmount > command.PaidAmount)
-            {
-                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less then " +
-                          $"{nameof(paymentAsset.CashinMinimalAmount)} ({paymentAsset.CashinMinimalAmount}).", new
-                          {
-                              command.MerchantId,
-                              command.PaymentRequestId
-                          });
-                return false;
-            }
-
-            if ((decimal?)paymentAsset.LowVolumeAmount >= command.PaidAmount)
-            {
-                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less or equals then " +
-                          $"{nameof(paymentAsset.LowVolumeAmount)} ({paymentAsset.LowVolumeAmount}).", new
-                          {
-                              command.MerchantId,
-                              command.PaymentRequestId
-                          });
-                return false;
-            }
-
-            if ((decimal?)paymentAsset.DustLimit >= command.PaidAmount)
-            {
-                _log.Info($"Skip payment request because paid amount ({command.PaidAmount}) is less or equals then " +
-                          $"{nameof(paymentAsset.DustLimit)} ({paymentAsset.DustLimit}).", new
-                          {
-                              command.MerchantId,
-                              command.PaymentRequestId
-                          });
-                return false;
-            }
-
             if (null != await _paymentRequestService.GetAsync(command.MerchantId, command.PaymentRequestId))
             {
-                _log.Info("Skip payment request because payment request with " +
-                          $"{nameof(command.MerchantId)} = {command.MerchantId} " +
-                          $"and {nameof(command.PaymentRequestId)} = {command.PaymentRequestId}.", new
+                _log.Info("Skip duplicate payment request.", new
                 {
                     command.MerchantId,
                     command.PaymentRequestId
@@ -178,7 +142,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
 
             return true;
-        }
+        }        
 
         private async Task<string> GetMerchantClientIdAsync(CreateSettlementCommand command)
         {
@@ -210,8 +174,65 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             return true;
         }
 
-        private async Task TryAddPaymentRequestWithErrorAsync(IPaymentRequest paymentRequest,
-            SettlementProcessingError error, string errorMessage, IEventPublisher publisher)
+        private bool ValidateMinAmount(IPaymentRequest paymentRequest, out string validateMessage)
+        {
+            validateMessage = null;
+            var paymentAsset = _assetService.GetAsset(paymentRequest.PaymentAssetId);
+            if ((decimal)paymentAsset.CashoutMinimalAmount > paymentRequest.PaidAmount)
+            {
+                validateMessage = $"Skip payment request because paid amount ({paymentRequest.PaidAmount}) is less then " +
+                          $"{nameof(paymentAsset.CashoutMinimalAmount)} ({paymentAsset.CashoutMinimalAmount}).";
+                return false;
+            }
+
+            if ((decimal)paymentAsset.CashinMinimalAmount > paymentRequest.PaidAmount)
+            {
+                validateMessage = $"Skip payment request because paid amount ({paymentRequest.PaidAmount}) is less then " +
+                          $"{nameof(paymentAsset.CashinMinimalAmount)} ({paymentAsset.CashinMinimalAmount}).";
+                return false;
+            }            
+
+            if ((decimal?)paymentAsset.LowVolumeAmount >= paymentRequest.PaidAmount)
+            {
+                validateMessage = $"Skip payment request because paid amount ({paymentRequest.PaidAmount}) is less or equals then " +
+                          $"{nameof(paymentAsset.LowVolumeAmount)} ({paymentAsset.LowVolumeAmount}).";
+                return false;
+            }
+
+            if ((decimal?)paymentAsset.DustLimit >= paymentRequest.PaidAmount)
+            {
+                validateMessage = $"Skip payment request because paid amount ({paymentRequest.PaidAmount}) is less or equals then " +
+                          $"{nameof(paymentAsset.DustLimit)} ({paymentAsset.DustLimit}).";
+                return false;
+            }
+
+            var settlementAsset = _assetService.GetAsset(paymentRequest.SettlementAssetId);
+            if ((decimal)settlementAsset.CashoutMinimalAmount > paymentRequest.Amount)
+            {
+                validateMessage = $"Skip payment request because amount ({paymentRequest.Amount}) is less then " +
+                                  $"{nameof(settlementAsset.CashoutMinimalAmount)} ({settlementAsset.CashoutMinimalAmount}).";
+                return false;
+            }
+
+            if ((decimal)settlementAsset.CashinMinimalAmount > paymentRequest.Amount)
+            {
+                validateMessage = $"Skip payment request because amount ({paymentRequest.Amount}) is less then " +
+                                  $"{nameof(settlementAsset.CashinMinimalAmount)} ({settlementAsset.CashinMinimalAmount}).";
+                return false;
+            }
+
+            if ((decimal?)settlementAsset.LowVolumeAmount >= paymentRequest.Amount)
+            {
+                validateMessage = $"Skip payment request because amount ({paymentRequest.Amount}) is less then " +
+                                  $"{nameof(settlementAsset.LowVolumeAmount)} ({settlementAsset.LowVolumeAmount}).";
+                return false;
+            }
+
+            return true;
+        }
+
+        private async Task TryAddPaymentRequestWithErrorAsync(IPaymentRequest paymentRequest, 
+            SettlementProcessingError error, IEventPublisher publisher)
         {
             if (paymentRequest == null)
             {
@@ -219,7 +240,6 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
 
             paymentRequest.Error = error;
-            paymentRequest.ErrorDescription = errorMessage;
 
             try
             {
