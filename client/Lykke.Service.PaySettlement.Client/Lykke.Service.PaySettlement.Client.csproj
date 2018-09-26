@@ -26,13 +26,11 @@
     <Compile Include="..\..\src\Lykke.Service.PaySettlement.Core\Domain\SettlementStatus.cs" Link="Models\SettlementStatus.cs" />
     <Compile Include="..\..\src\Lykke.Service.PaySettlement\Models\ContinuationResult.cs" Link="Models\ContinuationResult.cs" />
     <Compile Include="..\..\src\Lykke.Service.PaySettlement\Models\PaymentRequestModel.cs" Link="Models\PaymentRequestModel.cs" />
+    <Compile Include="..\Lykke.Service.PaySettlement.Contracts\SettlementProcessingError.cs" Link="Models\SettlementProcessingError.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Lykke.HttpClientGenerator" Version="2.2.0" />
     <PackageReference Include="Lykke.SettingsReader" Version="4.0.1" />
     <PackageReference Include="Refit" Version="4.6.16" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Models\" />
   </ItemGroup>
 </Project>
