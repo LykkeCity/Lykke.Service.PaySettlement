@@ -1,5 +1,4 @@
-﻿using Lykke.Service.PayInternal.Contract.PaymentRequest;
-using System;
+﻿using System;
 
 namespace Lykke.Service.PaySettlement.Core.Domain
 {
@@ -33,7 +32,7 @@ namespace Lykke.Service.PaySettlement.Core.Domain
         string MerchantClientId { get; set; }
         DateTime? TransferedToMerchantUtc { get; }
 
-        bool Error { get; set; }
+        SettlementProcessingError Error { get; set; }
         string ErrorDescription { get; set; }
     }
 }

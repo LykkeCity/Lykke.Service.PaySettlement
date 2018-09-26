@@ -13,5 +13,8 @@ namespace Lykke.Service.PaySettlement.Contracts.Events
 
         [ProtoMember(3, IsRequired = true)]
         public string ErrorDescription { get; set; }
+
+        [ProtoMember(4, IsRequired = true)]
+        public SettlementProcessingError Error { get; set; }
     }
 }

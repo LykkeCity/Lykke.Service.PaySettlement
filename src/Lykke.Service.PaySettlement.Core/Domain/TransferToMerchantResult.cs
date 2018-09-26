@@ -2,7 +2,7 @@
 {
     public class TransferToMerchantResult : PaymentRequestIdentifier
     {
-        public bool IsSuccess { get; set; }
+        public SettlementProcessingError Error { get; set; }
 
         public string ErrorMessage { get; set; }
 

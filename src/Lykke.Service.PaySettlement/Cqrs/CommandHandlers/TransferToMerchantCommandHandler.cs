@@ -9,6 +9,7 @@ using Lykke.Service.PaySettlement.Core.Services;
 using System;
 using System.Threading.Tasks;
 using Lykke.Service.PaySettlement.Cqrs.Helpers;
+using Lykke.Service.PaySettlement.Models.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 {
@@ -47,7 +48,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 TransferToMerchantResult transferToMerchantResult =
                     await _transferToMerchantLykkeWalletService.TransferAsync(paymentRequest);
 
-                if (transferToMerchantResult.IsSuccess)
+                if (transferToMerchantResult.Error == SettlementProcessingError.None)
                 {
                     await _paymentRequestService.SetTransferredToMerchantAsync(command.MerchantId,
                         command.PaymentRequestId, transferToMerchantResult.Amount);
@@ -62,15 +63,15 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 }
                 else
                 {
-                    await _errorProcessHelper.ProcessErrorAsync(command, publisher, true,
-                        transferToMerchantResult.ErrorMessage);
+                    var settlementException = new SettlementException(command.MerchantId, command.PaymentRequestId,
+                        transferToMerchantResult.Error, transferToMerchantResult.ErrorMessage);
+                    await _errorProcessHelper.ProcessErrorAsync(settlementException, publisher, true);
                 }
             }
             catch (Exception ex)
             {
-                await _errorProcessHelper.ProcessErrorAsync(command, publisher, true,
-                    "Unknown error has occured on transferring to merchant Lykke wallet.", ex);
-
+                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, true, ex,
+                    "Unknown error has occured on transferring to merchant Lykke wallet.");
                 throw;
             }
         }

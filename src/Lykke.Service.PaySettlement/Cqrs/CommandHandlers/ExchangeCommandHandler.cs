@@ -13,6 +13,7 @@ using NBitcoin;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Lykke.Service.PaySettlement.Models.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 {
@@ -43,22 +44,17 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
         [UsedImplicitly]
         public async Task Handle(ExchangeCommand command, IEventPublisher publisher)
         {
+            string hash = command.TransactionHash;
             try
             {
                 var transactionToHotWallet = await _ninjaClient.GetTransactionAsync(command.TransactionHash);
                 if (transactionToHotWallet == null)
                 {
                     await SetTransactionErrorAsync(command.TransactionHash,
+                        SettlementProcessingError.NoTransactionDetails,
                         "Can not receive transaction details.", publisher);
                     return;
                 }
-
-                var transactionToHotWalletInfo = new TransactionInfo
-                {
-                    Hash = command.TransactionHash,
-                    Amount = command.TransactionAmount,
-                    Fee = command.TransactionFee
-                };
 
                 foreach (var coin in transactionToHotWallet.SpentCoins)
                 {
@@ -68,29 +64,31 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                         continue;
                     }
 
-                    await ProcessTransactionToMultisigWalletAsync(transactionToHotWalletInfo, coin, publisher);
+                    hash = coin.Outpoint.Hash.ToString();
+                    await ProcessTransactionToMultisigWalletAsync(hash, publisher);
                 }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Process transaction is failed.",
-                    new { TransactionHash = command.TransactionHash });
+                await SetTransactionErrorAsync(hash, SettlementProcessingError.Unknown,
+                    "Process transaction is failed.", publisher, ex);
                 throw;
             }
         }
 
-        public async Task ProcessTransactionToMultisigWalletAsync(TransactionInfo transactionToHotWalletInfo, 
-            ICoin coin, IEventPublisher publisher)
+        public async Task ProcessTransactionToMultisigWalletAsync(string transactionToMultisigWalletHash,
+            IEventPublisher publisher)
         {
             var transactionToMultisigWalletInfo = new TransactionInfo
             {
-                Hash = coin.Outpoint.Hash.ToString()
+                Hash = transactionToMultisigWalletHash
             };
             var transactionToMultisigWallet = await _ninjaClient.GetTransactionAsync(
                 transactionToMultisigWalletInfo.Hash);
             if (transactionToMultisigWallet == null)
             {
-                await SetTransactionErrorAsync(transactionToHotWalletInfo.Hash,
+                await SetTransactionErrorAsync(transactionToMultisigWalletInfo.Hash,
+                    SettlementProcessingError.NoTransactionDetails,
                     "Can not receive transaction details.", publisher);
                 return;
             }
@@ -99,45 +97,26 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 transactionToMultisigWallet.Transaction.TotalOut.ToDecimal(MoneyUnit.BTC);
             transactionToMultisigWalletInfo.Fee = transactionToMultisigWallet.Fees.ToDecimal(MoneyUnit.BTC);
 
-            decimal transactionToHotWalletFeePart =
-                transactionToMultisigWalletInfo.Amount * transactionToHotWalletInfo.Fee /
-                transactionToHotWalletInfo.Amount;
-            
-            decimal totalFee = transactionToHotWalletFeePart + transactionToMultisigWalletInfo.Fee;
-
             _log.Info("Lykke Pay to Multisig transaction is executed. \r\n" +
-                      $"Total fee is {totalFee}.\r\n" +
-                      $"Transaction to multisig wallet is {transactionToMultisigWalletInfo.ToJson()}\r\n" +
-                      $"Transaction to hot wallet is {transactionToHotWalletInfo.ToJson()}",
-                new { TransactionHash = transactionToMultisigWalletInfo.Hash });
+                      $"Transaction to multisig wallet is {transactionToMultisigWalletInfo.ToJson()}",
+                new {TransactionHash = transactionToMultisigWalletInfo.Hash});
 
-            await ProcessTransactionAsync(transactionToMultisigWalletInfo, totalFee, publisher);
+            await ProcessTransactionAsync(transactionToMultisigWalletInfo, publisher);
         }
 
-        public async Task ProcessTransactionAsync(TransactionInfo transactionToMultisigWalletInfo, 
-            decimal totalFee, IEventPublisher publisher)
+        public async Task ProcessTransactionAsync(TransactionInfo transactionToMultisigWalletInfo,
+            IEventPublisher publisher)
         {
-            IPaymentRequest[] paymentRequests;
-            try
-            {
-                paymentRequests = (await _paymentRequestService.GetByTransferToMarketTransactionHash(
-                    transactionToMultisigWalletInfo.Hash)).ToArray();
+            IPaymentRequest[] paymentRequests = (await _paymentRequestService.GetByTransferToMarketTransactionHash(
+                transactionToMultisigWalletInfo.Hash)).ToArray();
 
-                if (!paymentRequests.Any())
-                {
-                    return;
-                }
-            }
-            catch (Exception ex)
+            if (!paymentRequests.Any())
             {
-                _log.Error(ex, "Unknown error has occured on adding to exchange queue.", new
-                {
-                    TransactionHash = transactionToMultisigWalletInfo.Hash
-                });
-                throw;
+                return;
             }
 
-            decimal totalTransacionAmount = transactionToMultisigWalletInfo.Amount + transactionToMultisigWalletInfo.Fee;
+            decimal totalTransacionAmount =
+                transactionToMultisigWalletInfo.Amount + transactionToMultisigWalletInfo.Fee;
             foreach (IPaymentRequest paymentRequest in paymentRequests)
             {
                 var transactionComplexInfo = new TransactionInfo
@@ -146,9 +125,6 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                     Amount = paymentRequest.PaidAmount -
                              paymentRequest.PaidAmount * transactionToMultisigWalletInfo.Fee / totalTransacionAmount,
                     Fee = transactionToMultisigWalletInfo.Fee
-                    //Amount = paymentRequest.PaidAmount -
-                    //         paymentRequest.PaidAmount * totalFee / totalTransacionAmount,
-                    //Fee = totalFee
                 };
                 await ProcessPaymentRequestAsync(paymentRequest, transactionComplexInfo, publisher);
             }
@@ -157,39 +133,28 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
         private async Task ProcessPaymentRequestAsync(IPaymentRequest paymentRequest,
             TransactionInfo transactionComplexInfo, IEventPublisher publisher)
         {
-            try
+            IExchangeOrder exchangeOrder = await _exchangeService.AddToQueueAsync(paymentRequest,
+                transactionComplexInfo.Amount);
+
+            await _paymentRequestService.SetExchangeQueuedAsync(exchangeOrder, transactionComplexInfo.Fee);
+
+            publisher.PublishEvent(new SettlementExchangeQueuedEvent
             {
-                IExchangeOrder exchangeOrder = await _exchangeService.AddToQueueAsync(paymentRequest,
-                    transactionComplexInfo.Amount);
-
-                await _paymentRequestService.SetExchangeQueuedAsync(exchangeOrder, transactionComplexInfo.Fee);
-
-                publisher.PublishEvent(new SettlementExchangeQueuedEvent
-                {
-                    PaymentRequestId = paymentRequest.PaymentRequestId,
-                    MerchantId = paymentRequest.MerchantId,
-                    TransactionHash = transactionComplexInfo.Hash,
-                    TransactionFee = transactionComplexInfo.Fee,
-                    MarketAmount = exchangeOrder.Volume,
-                    AssetId = exchangeOrder.SettlementAssetId
-                });
-            }
-            catch (Exception ex)
-            {
-                await _errorProcessHelper.ProcessErrorAsync(paymentRequest.MerchantId,
-                    paymentRequest.PaymentRequestId,
-                    publisher, true, "Unknown error has occured on adding to exchange queue.", ex);
-
-                throw;
-            }
+                PaymentRequestId = paymentRequest.PaymentRequestId,
+                MerchantId = paymentRequest.MerchantId,
+                TransactionHash = transactionComplexInfo.Hash,
+                TransactionFee = transactionComplexInfo.Fee,
+                MarketAmount = exchangeOrder.Volume,
+                AssetId = exchangeOrder.SettlementAssetId
+            });
         }
 
-        private async Task SetTransactionErrorAsync(string transactionHash, string errorMessage,
-            IEventPublisher publisher)
+        private async Task SetTransactionErrorAsync(string transactionHash, SettlementProcessingError error,
+            string errorMessage, IEventPublisher publisher, Exception innerException = null)
         {
             try
             {
-                _log.Error(null, errorMessage, new
+                _log.Error(innerException, errorMessage, new
                 {
                     TransactionHash = transactionHash
                 });
@@ -203,9 +168,9 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 
                 foreach (IPaymentRequest paymentRequest in paymentRequests)
                 {
-                    await _errorProcessHelper.ProcessErrorAsync(paymentRequest.MerchantId,
-                        paymentRequest.PaymentRequestId, publisher, true,
-                        errorMessage);
+                    var settlementException = new SettlementException(paymentRequest.MerchantId,
+                        paymentRequest.PaymentRequestId, error, errorMessage, innerException);
+                    await _errorProcessHelper.ProcessErrorAsync(settlementException, publisher, true);
                 }
             }
             catch (Exception ex)

@@ -35,50 +35,29 @@ namespace Lykke.Service.PaySettlement.Services
 
         public async Task<TransferToMerchantResult> TransferAsync(IPaymentRequest message)
         {
-            try
+            decimal amount = GetAmount(message);
+            if (!IsBalanceEnough(amount, message, out var isBalanceEnoughResult))
             {
-                decimal amount = GetAmount(message);
-                if (!IsBalanceEnough(amount, message, out var isBalanceEnoughResult))
-                {
-                    return isBalanceEnoughResult;
-                }
-                
-                ExchangeOperationResult result = await TransferExAsync(message, amount);
-
-                if (!IsExchangeOperationSuccess(message, result, out var isExchangeOperationSuccessResult))
-                {
-                    return isExchangeOperationSuccessResult;
-                }
-
-                _lykkeBalanceService.AddAsset(message.SettlementAssetId, -amount);                
-
-                return new TransferToMerchantResult
-                {
-                    IsSuccess = true,
-                    MerchantId = message.MerchantId,
-                    PaymentRequestId = message.PaymentRequestId,
-                    Amount = amount,
-                    AssetId = message.SettlementAssetId
-                };
+                return isBalanceEnoughResult;
             }
-            catch (Exception ex)
+
+            ExchangeOperationResult result = await TransferExAsync(message, amount);
+
+            if (!IsExchangeOperationSuccess(message, result, out var isExchangeOperationSuccessResult))
             {
-                string errorMessage = "Transfer to merchant is failed.";
-
-                _log.Error(ex, errorMessage, new
-                {
-                    message.MerchantId,
-                    message.PaymentRequestId
-                });
-
-                return new TransferToMerchantResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = errorMessage,
-                    MerchantId = message.MerchantId,
-                    PaymentRequestId = message.PaymentRequestId
-                };
+                return isExchangeOperationSuccessResult;
             }
+
+            _lykkeBalanceService.AddAsset(message.SettlementAssetId, -amount);
+
+            return new TransferToMerchantResult
+            {
+                Error = SettlementProcessingError.None,
+                MerchantId = message.MerchantId,
+                PaymentRequestId = message.PaymentRequestId,
+                Amount = amount,
+                AssetId = message.SettlementAssetId
+            };
         }
 
         private bool IsBalanceEnough(decimal amount, IPaymentRequest message, out TransferToMerchantResult result)
@@ -94,15 +73,9 @@ namespace Lykke.Service.PaySettlement.Services
             string errorMessage = $"There is not enough balance of {message.SettlementAssetId}. " +
                                   $"Required volume is {amount}. Balance is {balance}.";
 
-            _log.Error(null, errorMessage, new
-            {
-                message.MerchantId,
-                message.PaymentRequestId
-            });
-
             result = new TransferToMerchantResult
             {
-                IsSuccess = false,
+                Error = SettlementProcessingError.LowBalanceForTransferToMerchant,
                 ErrorMessage = errorMessage,
                 MerchantId = message.MerchantId,
                 PaymentRequestId = message.PaymentRequestId
@@ -155,15 +128,9 @@ namespace Lykke.Service.PaySettlement.Services
 
             string errorMessage = $"Can not transfer to merchant.\r\nResponse: {exchangeOperationResult?.ToJson()}";
 
-            _log.Error(null, errorMessage, new
-            {
-                message.MerchantId,
-                message.PaymentRequestId
-            });
-
             result = new TransferToMerchantResult
             {
-                IsSuccess = false,
+                Error = SettlementProcessingError.Unknown,
                 ErrorMessage = errorMessage,
                 MerchantId = message.MerchantId,
                 PaymentRequestId = message.PaymentRequestId

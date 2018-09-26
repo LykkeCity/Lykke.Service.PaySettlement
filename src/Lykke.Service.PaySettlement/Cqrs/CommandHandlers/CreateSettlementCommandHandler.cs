@@ -62,15 +62,17 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
             catch (SettlementException ex)
             {
-                await TryAddPaymentRequestWithErrorAsync(paymentRequest, ex.Message, publisher);
-                await _errorProcessHelper.ProcessErrorAsync(command, publisher, false, ex);
+                await TryAddPaymentRequestWithErrorAsync(paymentRequest, ex.Error, ex.Message, publisher);
+                await _errorProcessHelper.ProcessErrorAsync(ex, publisher, false);
                 return;
             }
             catch (Exception ex)
             {
-                await TryAddPaymentRequestWithErrorAsync(paymentRequest,
-                    "Unknown error has occured on validating.", publisher);
-                await _errorProcessHelper.ProcessErrorAsync(command, publisher, false, ex);
+                string errorMessage = "Unknown error has occured on validating.";
+                await TryAddPaymentRequestWithErrorAsync(paymentRequest, SettlementProcessingError.Unknown, 
+                    errorMessage, publisher);
+                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, false, ex,
+                    errorMessage);
                 throw;
             }
 
@@ -80,7 +82,8 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
             catch (Exception ex)
             {
-                await _errorProcessHelper.ProcessErrorAsync(command, publisher, false, ex);
+                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, false, ex,
+                    "Unknown error has occured on adding payment request.");
                 throw;
             }
         }
@@ -186,7 +189,9 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             }
             catch (ClientApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
             {
-                throw new SettlementException($"Merchant {command.MerchantId} is not found.", ex);
+                throw new SettlementException(command.MerchantId, command.PaymentRequestId,
+                    SettlementProcessingError.MerchantNotFound,
+                    $"Merchant {command.MerchantId} is not found.", ex);
             }
         }
 
@@ -197,7 +202,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 _log.Info("Skip payment request because merchant Lykke wallet is not set.", new
                 {
                     paymentRequest.MerchantId,
-                    PaymentRequestId = paymentRequest.PaymentRequestId
+                    paymentRequest.PaymentRequestId
                 });
                 return false;
             }
@@ -206,14 +211,14 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
         }
 
         private async Task TryAddPaymentRequestWithErrorAsync(IPaymentRequest paymentRequest,
-            string errorMessage, IEventPublisher publisher)
+            SettlementProcessingError error, string errorMessage, IEventPublisher publisher)
         {
             if (paymentRequest == null)
             {
                 return;
             }
 
-            paymentRequest.Error = true;
+            paymentRequest.Error = error;
             paymentRequest.ErrorDescription = errorMessage;
 
             try
@@ -234,7 +239,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
             {
                 PaymentRequestId = paymentRequest.PaymentRequestId,
                 MerchantId = paymentRequest.MerchantId,
-                IsError = paymentRequest.Error
+                IsError = paymentRequest.Error != SettlementProcessingError.None
             });
         }
     }

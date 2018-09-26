@@ -36,6 +36,7 @@ namespace Lykke.Service.PaySettlement.Core.Services
         Task<IPaymentRequest> SetTransferredToMerchantAsync(string merchantId, string id, 
             decimal transferredAmount);
 
-        Task<IPaymentRequest> SetErrorAsync(string merchantId, string id, string errorDescription);
+        Task<IPaymentRequest> SetErrorAsync(string merchantId, string id, 
+            SettlementProcessingError error, string errorDescription = null);
     }
 }

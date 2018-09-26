@@ -49,6 +49,8 @@ namespace Lykke.Service.PaySettlement.Modules
                 .ForMember(d => d.ErrorDescription, e => e.Ignore());
 
             mce.CreateMap<CashinCompletedEvent, ExchangeCommand>(MemberList.Destination);
+
+            mce.CreateMap<SettlementProcessingError, Contracts.SettlementProcessingError>();
         }
 
         private void CreatePaymentRequestControllerMaps(MapperConfigurationExpression mce)
