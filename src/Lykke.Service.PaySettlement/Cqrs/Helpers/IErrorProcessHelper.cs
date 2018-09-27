@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Lykke.Cqrs;
 using Lykke.Service.PaySettlement.Contracts.Commands;
-using Lykke.Service.PaySettlement.Models.Exceptions;
+using Lykke.Service.PaySettlement.Core.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Helpers
 {

@@ -4,11 +4,11 @@ using Lykke.Cqrs;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Services;
-using Lykke.Service.PaySettlement.Models.Exceptions;
 using System;
 using System.Threading.Tasks;
 using AutoMapper;
 using Lykke.Service.PaySettlement.Core.Domain;
+using Lykke.Service.PaySettlement.Core.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Helpers
 {

@@ -11,5 +11,6 @@
         ExchangeLeadToNegativeSpread = 6,
         NoTransactionDetails = 7,
         LowAmount = 8,
+        LowExchangeAmount = 9,
     }
 }

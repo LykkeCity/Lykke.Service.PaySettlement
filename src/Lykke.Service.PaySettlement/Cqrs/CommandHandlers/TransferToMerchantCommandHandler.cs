@@ -8,8 +8,8 @@ using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
 using System;
 using System.Threading.Tasks;
+using Lykke.Service.PaySettlement.Core.Exceptions;
 using Lykke.Service.PaySettlement.Cqrs.Helpers;
-using Lykke.Service.PaySettlement.Models.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 {

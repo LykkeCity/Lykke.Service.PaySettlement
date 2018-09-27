@@ -13,7 +13,7 @@ using NBitcoin;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Lykke.Service.PaySettlement.Models.Exceptions;
+using Lykke.Service.PaySettlement.Core.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 {
@@ -28,8 +28,9 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
         private readonly string _multisigWalletAddress;
         private readonly ILog _log;
 
-        public ExchangeCommandHandler(IPaymentRequestService paymentRequestService, IExchangeService exchangeService,
-            string multisigWalletAddress, INinjaClient ninjaClient, CqrsBlockchainCashinDetectorSettings settings,
+        public ExchangeCommandHandler(IPaymentRequestService paymentRequestService, 
+            IExchangeService exchangeService, string multisigWalletAddress, 
+            INinjaClient ninjaClient, CqrsBlockchainCashinDetectorSettings settings,
             IErrorProcessHelper errorProcessHelper, ILogFactory logFactory)
         {
             _paymentRequestService = paymentRequestService;
@@ -133,20 +134,28 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
         private async Task ProcessPaymentRequestAsync(IPaymentRequest paymentRequest,
             TransactionInfo transactionComplexInfo, IEventPublisher publisher)
         {
-            IExchangeOrder exchangeOrder = await _exchangeService.AddToQueueAsync(paymentRequest,
-                transactionComplexInfo.Amount);
-
-            await _paymentRequestService.SetExchangeQueuedAsync(exchangeOrder, transactionComplexInfo.Fee);
-
-            publisher.PublishEvent(new SettlementExchangeQueuedEvent
+            try
             {
-                PaymentRequestId = paymentRequest.PaymentRequestId,
-                MerchantId = paymentRequest.MerchantId,
-                TransactionHash = transactionComplexInfo.Hash,
-                TransactionFee = transactionComplexInfo.Fee,
-                MarketAmount = exchangeOrder.Volume,
-                AssetId = exchangeOrder.SettlementAssetId
-            });
+                IExchangeOrder exchangeOrder = await _exchangeService.AddToQueueAsync(paymentRequest,
+                    transactionComplexInfo.Amount);
+
+                await _paymentRequestService.SetExchangeQueuedAsync(exchangeOrder,
+                    transactionComplexInfo.Fee);
+
+                publisher.PublishEvent(new SettlementExchangeQueuedEvent
+                {
+                    PaymentRequestId = paymentRequest.PaymentRequestId,
+                    MerchantId = paymentRequest.MerchantId,
+                    TransactionHash = transactionComplexInfo.Hash,
+                    TransactionFee = transactionComplexInfo.Fee,
+                    MarketAmount = exchangeOrder.Volume,
+                    AssetId = exchangeOrder.SettlementAssetId
+                });
+            }
+            catch (SettlementException ex)
+            {
+                await _errorProcessHelper.ProcessErrorAsync(ex, publisher);
+            }            
         }
 
         private async Task SetTransactionErrorAsync(string transactionHash, SettlementProcessingError error,
