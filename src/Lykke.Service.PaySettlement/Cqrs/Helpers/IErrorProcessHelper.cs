@@ -2,21 +2,16 @@
 using System.Threading.Tasks;
 using Lykke.Cqrs;
 using Lykke.Service.PaySettlement.Contracts.Commands;
+using Lykke.Service.PaySettlement.Models.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Helpers
 {
     public interface IErrorProcessHelper
     {
-        Task ProcessErrorAsync(IPaymentRequestCommand command, IEventPublisher publisher,
-            bool setPaymentRequestStatus, Exception exception);
+        Task ProcessUnknownErrorAsync(IPaymentRequestCommand command, IEventPublisher publisher,
+            bool setPaymentRequestStatus, Exception exception, string message = "Unknown error has occured.");
 
-        Task ProcessErrorAsync(string merchantId, string paymentRequestId, IEventPublisher publisher,
-            bool setPaymentRequestStatus, Exception exception);
-
-        Task ProcessErrorAsync(IPaymentRequestCommand command, IEventPublisher publisher,
-            bool setPaymentRequestStatus, string errorMesssage, Exception exception = null);
-
-        Task ProcessErrorAsync(string merchantId, string paymentRequestId, IEventPublisher publisher,
-            bool setPaymentRequestStatus, string errorMesssage, Exception exception = null);
+        Task ProcessErrorAsync(SettlementException exception, IEventPublisher publisher,
+            bool setPaymentRequestStatus);
     }
 }

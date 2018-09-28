@@ -74,25 +74,27 @@ namespace Lykke.Service.PaySettlement.Services
                 {
                     IsSuccess = true,
                     TransactionHash = response.Hash,
-                    PaymentRequests = messages.Cast<PaymentRequestIdentifier>().ToArray()
+                    PaymentRequests = messages.Cast<IPaymentRequestIdentifier>().ToArray()
                 };
             }
             catch (Exception ex)
             {
+                string errorMessage;
                 if (transferRequest != null)
                 {
-                    _log.Error(ex, $"Unknown error has occured on transferring: {transferRequest.ToJson()}");
+                    errorMessage = $"Unknown error has occured on transferring: {transferRequest.ToJson()}";
                 }
                 else
-                {                
-                    _log.Error(ex, $"Unknown error has occured on transferring: {messages.ToJson()}");
+                {
+                    errorMessage = $"Unknown error has occured on transferring: {messages.ToJson()}";
                 }
 
                 return new TransferBatchPaymentRequestsResult
                 {
                     IsSuccess = false,
-                    ErrorMessage = "Unknown error has occured on transferring.",
-                    PaymentRequests = messages.Cast<PaymentRequestIdentifier>().ToArray()
+                    Exception = ex,
+                    ErrorMessage = errorMessage,
+                    PaymentRequests = messages.Cast<IPaymentRequestIdentifier>().ToArray()
                 };
             }
         }

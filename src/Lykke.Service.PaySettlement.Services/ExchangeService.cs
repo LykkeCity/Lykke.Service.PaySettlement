@@ -79,7 +79,7 @@ namespace Lykke.Service.PaySettlement.Services
             }
 
             ExchangeResult result = await ExchangeAsync(exchangeOrder);
-            if (result.IsSuccess || !result.CanBeRetried)
+            if (result.Error == SettlementProcessingError.None || !result.CanBeRetried)
             {
                 await _tradeOrdersRepository.DeleteAsync(exchangeOrder);
             }
@@ -113,7 +113,7 @@ namespace Lykke.Service.PaySettlement.Services
 
                 return new ExchangeResult
                 {
-                    IsSuccess = true,
+                    Error = SettlementProcessingError.None,
                     MerchantId = exchangeOrder.MerchantId,
                     PaymentRequestId = exchangeOrder.PaymentRequestId,
                     MarketPrice = (decimal)response.Price,
@@ -123,18 +123,11 @@ namespace Lykke.Service.PaySettlement.Services
             }
             catch (Exception ex)
             {
-                string errorMessage = "Unknown error has occured on exchanging.";
-
-                _log.Error(ex, errorMessage, new
-                {
-                    exchangeOrder.MerchantId,
-                    exchangeOrder.PaymentRequestId
-                });
-
                 return new ExchangeResult
                 {
-                    IsSuccess = false,
-                    ErrorMessage = errorMessage,
+                    Exception = ex,
+                    Error = SettlementProcessingError.Unknown,
+                    ErrorMessage = "Unknown error has occured on exchanging.",
                     MerchantId = exchangeOrder.MerchantId,
                     PaymentRequestId = exchangeOrder.PaymentRequestId
                 };
@@ -153,15 +146,9 @@ namespace Lykke.Service.PaySettlement.Services
             string errorMessage = $"There is not enough balance of {exchangeOrder.PaymentAssetId}. " +
                                   $"Required volume is {exchangeOrder.Volume}. Balance is {balance}.";
 
-            _log.Error(null, errorMessage, new
-            {
-                exchangeOrder.MerchantId,
-                exchangeOrder.PaymentRequestId
-            });
-
             result = new ExchangeResult
             {
-                IsSuccess = false,
+                Error = SettlementProcessingError.LowBalanceForExchange,
                 ErrorMessage = errorMessage,
                 MerchantId = exchangeOrder.MerchantId,
                 PaymentRequestId = exchangeOrder.PaymentRequestId
@@ -221,19 +208,34 @@ namespace Lykke.Service.PaySettlement.Services
 
             result = new ExchangeResult
             {
-                IsSuccess = false,
-                CanBeRetried = false,
                 ErrorMessage = errorMessage,
                 MerchantId = exchangeOrder.MerchantId,
                 PaymentRequestId = exchangeOrder.PaymentRequestId
             };
+
+            if (response?.Status == MeStatusCodes.NoLiquidity)
+            {
+                result.Error = SettlementProcessingError.NoLiquidityForExchange;
+            }
+            else if (response?.Status == MeStatusCodes.LeadToNegativeSpread)
+            {
+                result.Error = SettlementProcessingError.ExchangeLeadToNegativeSpread;
+            }
+            else
+            {
+                result.Error = SettlementProcessingError.Unknown;
+            }
 
             if (response == null 
                 || response?.Status == MeStatusCodes.NoLiquidity
                 || response?.Status == MeStatusCodes.LeadToNegativeSpread
                 || response?.Status == MeStatusCodes.Runtime)
             {
-                result.CanBeRetried = true;
+                result.CanBeRetried = true;                
+            }
+            else
+            {
+                result.CanBeRetried = false;                
             }
 
             return false;

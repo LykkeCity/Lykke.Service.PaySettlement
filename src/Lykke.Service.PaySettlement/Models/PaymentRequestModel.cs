@@ -1,4 +1,5 @@
-﻿using Lykke.Service.PaySettlement.Core.Domain;
+﻿using Lykke.Service.PaySettlement.Contracts;
+using Lykke.Service.PaySettlement.Core.Domain;
 using System;
 
 namespace Lykke.Service.PaySettlement.Models
@@ -35,7 +36,7 @@ namespace Lykke.Service.PaySettlement.Models
         public string MerchantClientId { get; set; }
         public DateTime? TransferedToMerchantUtc { get; set; }
 
-        public bool Error { get; set; }
+        public Contracts.SettlementProcessingError Error { get; set; }
         public string ErrorDescription { get; set; }
     }
 }
