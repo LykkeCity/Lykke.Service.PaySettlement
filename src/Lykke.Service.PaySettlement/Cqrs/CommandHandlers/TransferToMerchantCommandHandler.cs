@@ -65,12 +65,12 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
                 {
                     var settlementException = new SettlementException(command.MerchantId, command.PaymentRequestId,
                         transferToMerchantResult.Error, transferToMerchantResult.ErrorMessage);
-                    await _errorProcessHelper.ProcessErrorAsync(settlementException, publisher, true);
+                    await _errorProcessHelper.ProcessErrorAsync(settlementException, publisher);
                 }
             }
             catch (Exception ex)
             {
-                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, true, ex,
+                await _errorProcessHelper.ProcessUnknownErrorAsync(command, publisher, ex,
                     "Unknown error has occured on transferring to merchant Lykke wallet.");
                 throw;
             }

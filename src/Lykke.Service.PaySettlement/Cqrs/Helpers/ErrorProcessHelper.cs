@@ -27,27 +27,22 @@ namespace Lykke.Service.PaySettlement.Cqrs.Helpers
         }
 
         public Task ProcessUnknownErrorAsync(IPaymentRequestCommand command, IEventPublisher publisher,
-            bool setPaymentRequestStatus, Exception exception, string message = "Unknown error has occured.")
+            Exception exception, string message = "Unknown error has occured.")
         {
             return ProcessErrorAsync(new SettlementException(command.MerchantId, command.PaymentRequestId, 
-                    SettlementProcessingError.Unknown, message, exception), publisher,
-                setPaymentRequestStatus);
+                    SettlementProcessingError.Unknown, message, exception), publisher);
         }
 
-        public async Task ProcessErrorAsync(SettlementException exception, IEventPublisher publisher,
-            bool setPaymentRequestStatus)
+        public async Task ProcessErrorAsync(SettlementException exception, IEventPublisher publisher)
         {
             _log.Error(exception.InnerException, exception.Message, new
             {
-                MerchantId = exception.MerchantId,
-                PaymentRequestId = exception.PaymentRequestId
+                exception.MerchantId,
+                exception.PaymentRequestId
             });
 
-            if (setPaymentRequestStatus)
-            {
-                await _paymentRequestService.SetErrorAsync(exception.MerchantId,
-                    exception.PaymentRequestId, exception.Error, exception.Message);
-            }
+            await _paymentRequestService.SetErrorAsync(exception.MerchantId,
+                exception.PaymentRequestId, exception.Error, exception.Message);
 
             publisher.PublishEvent(new SettlementErrorEvent
             {

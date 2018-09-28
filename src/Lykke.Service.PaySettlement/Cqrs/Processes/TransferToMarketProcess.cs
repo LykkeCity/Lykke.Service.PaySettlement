@@ -86,7 +86,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
                         paymentRequestIdentifier.PaymentRequestId,
                         SettlementProcessingError.Unknown, result.ErrorMessage, result.Exception);
 
-                    await _errorProcessHelper.ProcessErrorAsync(settlementException, _eventPublisher, true);
+                    await _errorProcessHelper.ProcessErrorAsync(settlementException, _eventPublisher);
                 }
             }
         }
