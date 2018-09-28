@@ -55,36 +55,39 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
 
                 await ProcessTransferResultAsync(result);
 
-            } while (result.IsSuccess && result.PaymentRequests?.Any() == true);
+            } while (result.IsSuccess && result.TransferToMarketMessages?.Any() == true);
         }
 
         private async Task ProcessTransferResultAsync(TransferBatchPaymentRequestsResult result)
         {
-            if (result.PaymentRequests == null)
+            if (result.TransferToMarketMessages == null)
             {
                 return;
             }
 
-            foreach (var paymentRequestIdentifier in result.PaymentRequests)
+            foreach (var transferToMarketMessage in result.TransferToMarketMessages)
             {
                 if (result.IsSuccess)
                 {
                     await _paymentRequestService.SetTransferringToMarketAsync(
-                        paymentRequestIdentifier.MerchantId, paymentRequestIdentifier.PaymentRequestId,
+                        transferToMarketMessage.MerchantId, transferToMarketMessage.PaymentRequestId,
                         result.TransactionHash);
 
                     _eventPublisher.PublishEvent(new SettlementTransferringToMarketEvent
                     {
-                        PaymentRequestId = paymentRequestIdentifier.PaymentRequestId,
-                        MerchantId = paymentRequestIdentifier.MerchantId,
-                        TransactionHash = result.TransactionHash
+                        PaymentRequestId = transferToMarketMessage.PaymentRequestId,
+                        MerchantId = transferToMarketMessage.MerchantId,
+                        TransactionHash = result.TransactionHash,
+                        Amount = transferToMarketMessage.Amount,
+                        AssetId = transferToMarketMessage.AssetId,
+                        DestinationAddress = result.DestinationAddress
                     });
                 }
                 else
                 {
-                    var settlementException = new SettlementException(paymentRequestIdentifier.MerchantId,
-                        paymentRequestIdentifier.PaymentRequestId,
-                        SettlementProcessingError.Unknown, result.ErrorMessage, result.Exception);
+                    var settlementException = new SettlementException(transferToMarketMessage.MerchantId,
+                        transferToMarketMessage.PaymentRequestId, SettlementProcessingError.Unknown, 
+                        result.ErrorMessage, result.Exception);
 
                     await _errorProcessHelper.ProcessErrorAsync(settlementException, _eventPublisher);
                 }
