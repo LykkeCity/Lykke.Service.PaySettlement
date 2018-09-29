@@ -18,9 +18,9 @@ namespace Lykke.Service.PaySettlement.Contracts.Events
         public string DestinationAddress { get; set; }
 
         [ProtoMember(5, IsRequired = true)]
-        public decimal Amount { get; set; }
+        public decimal TransactionAmount { get; set; }
 
         [ProtoMember(6, IsRequired = true)]
-        public string AssetId { get; set; }
+        public string TransactionAssetId { get; set; }
     }
 }

@@ -75,7 +75,9 @@ namespace Lykke.Service.PaySettlement.Services
                     IsSuccess = true,
                     TransactionHash = response.Hash,
                     DestinationAddress = _settings.MultisigWalletAddress,
-                    TransferToMarketMessages = messages
+                    TransactionAmount = transferRequest.Sources.Sum(s=>s.Amount),
+                    TransactionAssetId = messages.First().AssetId,
+                    PaymentRequests = messages.Cast<IPaymentRequestIdentifier>().ToArray()
                 };
             }
             catch (Exception ex)
@@ -95,7 +97,7 @@ namespace Lykke.Service.PaySettlement.Services
                     IsSuccess = false,
                     Exception = ex,
                     ErrorMessage = errorMessage,
-                    TransferToMarketMessages = messages
+                    PaymentRequests = messages.Cast<IPaymentRequestIdentifier>().ToArray()
                 };
             }
         }

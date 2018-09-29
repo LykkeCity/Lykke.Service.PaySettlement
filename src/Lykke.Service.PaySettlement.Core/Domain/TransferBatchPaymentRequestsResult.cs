@@ -14,6 +14,10 @@ namespace Lykke.Service.PaySettlement.Core.Domain
 
         public string DestinationAddress { get; set; }
 
-        public TransferToMarketMessage[] TransferToMarketMessages { get; set; }
+        public decimal TransactionAmount { get; set; }
+
+        public string TransactionAssetId { get; set; }
+
+        public IPaymentRequestIdentifier[] PaymentRequests { get; set; }
     }
 }
