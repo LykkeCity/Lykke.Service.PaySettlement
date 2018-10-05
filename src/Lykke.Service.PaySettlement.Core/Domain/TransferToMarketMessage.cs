@@ -4,6 +4,7 @@
     {
         public string PaymentRequestWalletAddress { get; set; }
         public decimal Amount { get; set; }
+        public string AssetId { get; set; }
 
         public TransferToMarketMessage()
         {
@@ -15,6 +16,7 @@
             PaymentRequestId = paymentRequest.PaymentRequestId;
             PaymentRequestWalletAddress = paymentRequest.WalletAddress;
             Amount = paymentRequest.PaidAmount;
+            AssetId = paymentRequest.PaymentAssetId;
         }
     }
 }

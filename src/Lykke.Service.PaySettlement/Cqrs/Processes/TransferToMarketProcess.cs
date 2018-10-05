@@ -65,26 +65,29 @@ namespace Lykke.Service.PaySettlement.Cqrs.Processes
                 return;
             }
 
-            foreach (var paymentRequestIdentifier in result.PaymentRequests)
+            foreach (var paymentRequest in result.PaymentRequests)
             {
                 if (result.IsSuccess)
                 {
                     await _paymentRequestService.SetTransferringToMarketAsync(
-                        paymentRequestIdentifier.MerchantId, paymentRequestIdentifier.PaymentRequestId,
+                        paymentRequest.MerchantId, paymentRequest.PaymentRequestId,
                         result.TransactionHash);
 
                     _eventPublisher.PublishEvent(new SettlementTransferringToMarketEvent
                     {
-                        PaymentRequestId = paymentRequestIdentifier.PaymentRequestId,
-                        MerchantId = paymentRequestIdentifier.MerchantId,
-                        TransactionHash = result.TransactionHash
+                        PaymentRequestId = paymentRequest.PaymentRequestId,
+                        MerchantId = paymentRequest.MerchantId,
+                        TransactionHash = result.TransactionHash,
+                        TransactionAmount = result.TransactionAmount,
+                        TransactionAssetId = result.TransactionAssetId,
+                        DestinationAddress = result.DestinationAddress
                     });
                 }
                 else
                 {
-                    var settlementException = new SettlementException(paymentRequestIdentifier.MerchantId,
-                        paymentRequestIdentifier.PaymentRequestId,
-                        SettlementProcessingError.Unknown, result.ErrorMessage, result.Exception);
+                    var settlementException = new SettlementException(paymentRequest.MerchantId,
+                        paymentRequest.PaymentRequestId, SettlementProcessingError.Unknown, 
+                        result.ErrorMessage, result.Exception);
 
                     await _errorProcessHelper.ProcessErrorAsync(settlementException, _eventPublisher);
                 }

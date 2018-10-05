@@ -74,6 +74,9 @@ namespace Lykke.Service.PaySettlement.Services
                 {
                     IsSuccess = true,
                     TransactionHash = response.Hash,
+                    DestinationAddress = _settings.MultisigWalletAddress,
+                    TransactionAmount = transferRequest.Sources.Sum(s=>s.Amount),
+                    TransactionAssetId = messages.First().AssetId,
                     PaymentRequests = messages.Cast<IPaymentRequestIdentifier>().ToArray()
                 };
             }

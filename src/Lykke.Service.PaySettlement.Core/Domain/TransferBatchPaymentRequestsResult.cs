@@ -12,6 +12,12 @@ namespace Lykke.Service.PaySettlement.Core.Domain
 
         public string TransactionHash { get; set; }
 
+        public string DestinationAddress { get; set; }
+
+        public decimal TransactionAmount { get; set; }
+
+        public string TransactionAssetId { get; set; }
+
         public IPaymentRequestIdentifier[] PaymentRequests { get; set; }
     }
 }
