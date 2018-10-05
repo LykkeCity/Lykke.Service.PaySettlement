@@ -9,7 +9,7 @@ using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Lykke.Service.PaySettlement.Cqrs.Helpers;
-using Lykke.Service.PaySettlement.Models.Exceptions;
+using Lykke.Service.PaySettlement.Core.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Processes
 {

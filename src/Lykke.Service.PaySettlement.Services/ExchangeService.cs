@@ -9,6 +9,7 @@ using Lykke.Service.PaySettlement.Core.Domain;
 using Lykke.Service.PaySettlement.Core.Services;
 using System;
 using System.Threading.Tasks;
+using Lykke.Service.PaySettlement.Core.Exceptions;
 using Lykke.Service.PaySettlement.Core.Repositories;
 
 namespace Lykke.Service.PaySettlement.Services
@@ -39,7 +40,7 @@ namespace Lykke.Service.PaySettlement.Services
         }
 
         public async Task<IExchangeOrder> AddToQueueAsync(IPaymentRequest paymentRequest,
-            decimal transferredAmount)
+            decimal exchangeAmount)
         {
             AssetPair assetPair = _assetService.GetAssetPair(paymentRequest.PaymentAssetId,
                 paymentRequest.SettlementAssetId);
@@ -49,9 +50,8 @@ namespace Lykke.Service.PaySettlement.Services
                 ? OrderAction.Sell
                 : OrderAction.Buy;
 
-            decimal marketAmount = transferredAmount.TruncateDecimalPlaces(IsStraight(orderAction)
-                ? assetPair.InvertedAccuracy
-                : assetPair.Accuracy);
+            decimal marketAmount = CalculateMarketAmount(paymentRequest, orderAction, assetPair, 
+                exchangeAmount);
 
             var tradeOrder = new ExchangeOrder()
             {
@@ -67,6 +67,38 @@ namespace Lykke.Service.PaySettlement.Services
 
             await _tradeOrdersRepository.InsertOrReplaceAsync(tradeOrder);
             return tradeOrder;
+        }
+
+        private decimal CalculateMarketAmount(IPaymentRequest paymentRequest, OrderAction orderAction, 
+            AssetPair assetPair, decimal exchangeAmount)
+        {
+            decimal minVolume;
+            string minVolumeName;
+            int accuracy;
+            if (IsStraight(orderAction))
+            {
+                minVolume = (decimal)assetPair.MinVolume;
+                minVolumeName = nameof(assetPair.MinVolume);
+                accuracy = assetPair.InvertedAccuracy;//Yes, this is weird but look at asset pair data
+            }
+            else
+            {
+                minVolume = (decimal)assetPair.MinInvertedVolume;
+                minVolumeName = nameof(assetPair.MinInvertedVolume);
+                accuracy = assetPair.Accuracy;//Yes, this is weird but look at asset pair data
+            }
+
+            decimal marketAmount = exchangeAmount.TruncateDecimalPlaces(accuracy);
+
+            if (minVolume >= marketAmount)
+            {
+                throw new SettlementException(paymentRequest.MerchantId,
+                    paymentRequest.PaymentRequestId, SettlementProcessingError.LowExchangeAmount,
+                    "Payment request can not be exchanged because exchange amount " +
+                    $"({marketAmount}) is less or equals then {minVolumeName} ({minVolume}).");
+            }
+
+            return marketAmount;
         }
 
         public async Task<ExchangeResult> ExchangeAsync()

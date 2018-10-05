@@ -1,7 +1,7 @@
 ﻿using Lykke.Service.PaySettlement.Core.Domain;
 using System;
 
-namespace Lykke.Service.PaySettlement.Models.Exceptions
+namespace Lykke.Service.PaySettlement.Core.Exceptions
 {
     public class SettlementException: Exception
     {

@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Domain;
+using Lykke.Service.PaySettlement.Core.Exceptions;
 using Lykke.Service.PaySettlement.Core.Services;
 using Lykke.Service.PaySettlement.Cqrs.Helpers;
-using Lykke.Service.PaySettlement.Models.Exceptions;
 
 namespace Lykke.Service.PaySettlement.Cqrs.Processes
 {

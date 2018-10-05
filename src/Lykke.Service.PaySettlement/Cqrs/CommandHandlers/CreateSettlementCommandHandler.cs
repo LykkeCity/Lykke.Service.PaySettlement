@@ -9,9 +9,9 @@ using Lykke.Service.PayMerchant.Client.Models;
 using Lykke.Service.PaySettlement.Contracts.Commands;
 using Lykke.Service.PaySettlement.Contracts.Events;
 using Lykke.Service.PaySettlement.Core.Domain;
+using Lykke.Service.PaySettlement.Core.Exceptions;
 using Lykke.Service.PaySettlement.Core.Services;
 using Lykke.Service.PaySettlement.Cqrs.Helpers;
-using Lykke.Service.PaySettlement.Models.Exceptions;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -178,12 +178,6 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
         {
             validateMessage = null;
             var paymentAsset = _assetService.GetAsset(paymentRequest.PaymentAssetId);
-            if ((decimal)paymentAsset.CashoutMinimalAmount > paymentRequest.PaidAmount)
-            {
-                validateMessage = $"Skip payment request because paid amount ({paymentRequest.PaidAmount}) is less then " +
-                          $"{nameof(paymentAsset.CashoutMinimalAmount)} ({paymentAsset.CashoutMinimalAmount}).";
-                return false;
-            }
 
             if ((decimal)paymentAsset.CashinMinimalAmount > paymentRequest.PaidAmount)
             {
@@ -223,7 +217,7 @@ namespace Lykke.Service.PaySettlement.Cqrs.CommandHandlers
 
             if ((decimal?)settlementAsset.LowVolumeAmount >= paymentRequest.Amount)
             {
-                validateMessage = $"Skip payment request because amount ({paymentRequest.Amount}) is less then " +
+                validateMessage = $"Skip payment request because amount ({paymentRequest.Amount}) is less or equals then " +
                                   $"{nameof(settlementAsset.LowVolumeAmount)} ({settlementAsset.LowVolumeAmount}).";
                 return false;
             }
