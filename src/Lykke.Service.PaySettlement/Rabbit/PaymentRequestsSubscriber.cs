@@ -35,13 +35,12 @@ namespace Lykke.Service.PaySettlement.Rabbit
         {
             _eventPublisher = eventPublisher;
 
-            var settings = new RabbitMqSubscriptionSettings
-            {
-                ConnectionString = _settings.ConnectionString,
-                QueueName = _settings.QueueName,
-                ExchangeName = _settings.ExchangeName,
-                IsDurable = true
-            };
+            var settings = RabbitMqSubscriptionSettings
+                .ForSubscriber(
+                    _settings.ConnectionString, 
+                    _settings.ExchangeName, 
+                    nameof(PaySettlement))
+                .MakeDurable();
 
             _subscriber = new RabbitMqSubscriber<PaymentRequestDetailsMessage>(
                     _logFactory,
