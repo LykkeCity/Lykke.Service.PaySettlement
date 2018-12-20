@@ -16,9 +16,6 @@ PaySettlementService:
         ExchangeName: 
             settings-key: LykkePay-PaymentRequestsExchangeName
             types: [ Tag ]
-        QueueName: 
-            settings-key: PaySettlementService-PaymentRequestsSubscriber-QueueName
-            types: [ Tag ]
     TransferToMarketService:
         MaxTransfersPerTransaction: 
             settings-key: PaySettlementService-TransferToMarketService-MaxTransfersPerTransaction

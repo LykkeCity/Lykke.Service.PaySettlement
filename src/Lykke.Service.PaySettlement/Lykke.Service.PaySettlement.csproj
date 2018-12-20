@@ -23,11 +23,11 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Lykke.Job.BlockchainCashinDetector.Contract" Version="2.0.0" />
-    <PackageReference Include="Lykke.Messaging.RabbitMq" Version="2.1.0" />
-    <PackageReference Include="Lykke.RabbitMqBroker" Version="7.4.1" />
+    <PackageReference Include="Lykke.Messaging.RabbitMq" Version="2.1.2" />
+    <PackageReference Include="Lykke.RabbitMqBroker" Version="7.6.0" />
     <PackageReference Include="LykkePay.Common" Version="1.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.1.2" />
-    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\client\Lykke.Service.PaySettlement.Contracts\Lykke.Service.PaySettlement.Contracts.csproj" />
